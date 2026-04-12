@@ -1,5 +1,6 @@
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import Header from './components/Header/Header';
+import Footer from './components/Footer/Footer';
 import MainPage from './pages/MainPage/MainPage';
 import './App.css';
 
@@ -13,6 +14,7 @@ function App() {
             <Route path="/" element={<MainPage />} />
           </Routes>
         </main>
+        <Footer />
       </div>
     </HashRouter>
   );
