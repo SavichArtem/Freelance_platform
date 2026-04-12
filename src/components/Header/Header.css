@@ -1,0 +1,109 @@
+.header {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 12px 0;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.logo {
+  color: #212529;
+  font-size: 20px;
+  font-weight: bold;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.logo:hover {
+  color: #0d6efd;
+}
+
+/* Навигация */
+.nav {
+  flex: 1;
+}
+
+.nav-menu {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex-wrap: wrap;
+}
+
+.nav-menu li a {
+  color: #212529;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.nav-menu li a:hover {
+  background-color: #f0f0f0;
+  color: #0d6efd;
+}
+
+.nav-menu li a.active {
+  background-color: #0d6efd;
+  color: white;
+}
+
+/* Блок со входом и регистрацией */
+.auth-links {
+  display: flex;
+  gap: 16px;
+  white-space: nowrap;
+}
+
+.auth-link {
+  color: #212529;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.auth-link:hover {
+  background-color: #f0f0f0;
+  color: #0d6efd;
+}
+
+@media (max-width: 992px) {
+  .nav-menu {
+    gap: 8px;
+  }
+  
+  .nav-menu li a {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-inner {
+    flex-direction: column;
+  }
+  
+  .logo {
+    text-align: center;
+  }
+  
+  .nav {
+    width: 100%;
+  }
+  
+  .nav-menu {
+    justify-content: center;
+  }
+}
