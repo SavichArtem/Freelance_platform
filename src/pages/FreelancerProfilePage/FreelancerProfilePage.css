@@ -1,0 +1,238 @@
+.freelancer-profile-page {
+  padding: 24px 0 40px;
+}
+
+.profile-header {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  padding: 24px;
+  background: white;
+  border-radius: 12px;
+  margin-bottom: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.profile-avatar {
+  flex-shrink: 0;
+  width: 120px;
+  height: 120px;
+}
+
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-avatar .avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #0d6efd;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-weight: bold;
+}
+
+.profile-main-info {
+  flex: 1;
+}
+
+.profile-name {
+  font-size: 28px;
+  color: #212529;
+  margin-bottom: 8px;
+}
+
+.profile-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.profile-rating .stars {
+  display: flex;
+  gap: 2px;
+}
+
+.profile-rating .star {
+  font-size: 20px;
+}
+
+.star-full {
+  color: #ffc107;
+}
+
+.star-empty {
+  color: #dee2e6;
+}
+
+.rating-value {
+  font-size: 14px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.profile-description {
+  color: #495057;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.btn-message {
+  flex-shrink: 0;
+}
+
+.profile-section {
+  margin-bottom: 32px;
+}
+
+.profile-section .section-title {
+  font-size: 22px;
+  color: #212529;
+  margin-bottom: 20px;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.service-card {
+  padding: 20px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+}
+
+.service-name {
+  font-size: 18px;
+  color: #212529;
+  margin-bottom: 8px;
+}
+
+.service-description {
+  font-size: 14px;
+  color: #6c757d;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.service-price {
+  font-size: 20px;
+  font-weight: 600;
+  color: #0d6efd;
+}
+
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.portfolio-card {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.portfolio-image {
+  height: 180px;
+  background: #f8f9fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.portfolio-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.portfolio-placeholder {
+  font-size: 48px;
+}
+
+.portfolio-title {
+  font-size: 16px;
+  color: #212529;
+  padding: 12px 12px 4px;
+}
+
+.portfolio-description {
+  font-size: 14px;
+  color: #6c757d;
+  padding: 0 12px 12px;
+}
+
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.review-card {
+  padding: 20px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.review-author {
+  font-weight: 600;
+  color: #212529;
+}
+
+.review-rating {
+  display: flex;
+  gap: 2px;
+}
+
+.review-rating .star {
+  font-size: 14px;
+}
+
+.review-date {
+  color: #adb5bd;
+  font-size: 13px;
+  margin-left: auto;
+}
+
+.review-text {
+  color: #495057;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .profile-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .profile-rating {
+    justify-content: center;
+  }
+  
+  .btn-message {
+    width: 100%;
+  }
+}
