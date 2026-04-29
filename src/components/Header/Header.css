@@ -79,6 +79,20 @@
   color: #0d6efd;
 }
 
+.logout-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  color: #212529;
+}
+
+.logout-btn:hover {
+  background-color: #f0f0f0;
+  color: #dc3545;
+}
+
 @media (max-width: 992px) {
   .nav-menu {
     gap: 8px;
