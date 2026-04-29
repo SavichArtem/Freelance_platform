@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchOrderById } from '../../store/slices/ordersSlice';
+import { fetchOrderById, completeOrder, returnMoney, openDispute, clearMessage } from '../../store/slices/ordersSlice';
 import './OrderDetailPage.css';
 
 const STATUS_MAP = {
@@ -30,7 +30,7 @@ const OrderDetailPage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector(state => state.auth);
-  const { currentOrder: order, loading, error } = useSelector(state => state.orders);
+  const { currentOrder: order, loading, error, message } = useSelector(state => state.orders);
 
   const [showDisputeForm, setShowDisputeForm] = useState(false);
   const [disputeData, setDisputeData] = useState({
@@ -38,13 +38,25 @@ const OrderDetailPage = () => {
     comment: '',
   });
   const [disputeError, setDisputeError] = useState('');
-  const [message, setMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     if (orderId) {
       dispatch(fetchOrderById(orderId));
     }
+    return () => {
+      dispatch(clearMessage());
+    };
   }, [orderId, dispatch]);
+
+  useEffect(() => {
+    if (message) {
+      setSuccessMessage(message);
+      dispatch(clearMessage());
+      dispatch(fetchOrderById(orderId));
+      setTimeout(() => setSuccessMessage(''), 5000);
+    }
+  }, [message, dispatch, orderId]);
 
   const formatDate = (dateString) => {
     if (!dateString) return '—';
@@ -60,8 +72,7 @@ const OrderDetailPage = () => {
 
   const handleConfirmComplete = () => {
     if (window.confirm('Вы уверены, что хотите подтвердить выполнение заказа?')) {
-      setMessage('Работа принята, деньги переведены фрилансеру');
-      setTimeout(() => setMessage(''), 3000);
+      dispatch(completeOrder(order.id));
     }
   };
 
@@ -79,6 +90,7 @@ const OrderDetailPage = () => {
 
   const handleDisputeSubmit = (e) => {
     e.preventDefault();
+    setDisputeError('');
 
     if (!disputeData.reason) {
       setDisputeError('Выберите причину спора');
@@ -89,15 +101,19 @@ const OrderDetailPage = () => {
       return;
     }
 
-    setMessage('Спор открыт, ожидайте решения администратора');
-    setShowDisputeForm(false);
-    setTimeout(() => setMessage(''), 3000);
+    dispatch(openDispute({ orderId: order.id, data: disputeData }))
+      .unwrap()
+      .then(() => {
+        setShowDisputeForm(false);
+      })
+      .catch((err) => {
+        setDisputeError(err);
+      });
   };
 
   const handleReturnMoney = () => {
     if (window.confirm('Вы уверены, что хотите вернуть деньги заказчику?')) {
-      setMessage('Средства возвращены заказчику');
-      setTimeout(() => setMessage(''), 3000);
+      dispatch(returnMoney(order.id));
     }
   };
 
@@ -119,6 +135,9 @@ const OrderDetailPage = () => {
       <div className="order-detail-page">
         <div className="container">
           <div className="error-message">{error}</div>
+          <button onClick={() => navigate(-1)} className="btn-back">
+            ← Назад к заказам
+          </button>
         </div>
       </div>
     );
@@ -136,8 +155,8 @@ const OrderDetailPage = () => {
           ← Назад к заказам
         </button>
 
-        {message && (
-          <div className="message-alert">{message}</div>
+        {successMessage && (
+          <div className="message-alert message-success">{successMessage}</div>
         )}
 
         <div className="order-detail-layout">
@@ -146,7 +165,7 @@ const OrderDetailPage = () => {
               <div className="order-card-header">
                 <h1 className="order-number">{order.orderNumber}</h1>
                 <span className={`status-badge ${STATUS_CLASS[order.status]}`}>
-                  {STATUS_MAP[order.status]}
+                  {STATUS_MAP[order.status] || order.status}
                 </span>
               </div>
 
@@ -158,19 +177,13 @@ const OrderDetailPage = () => {
                 <div className="detail-row">
                   <span className="detail-label">Бюджет:</span>
                   <span className="detail-value detail-price">
-                    {order.budget.toLocaleString()} ₽
+                    {Number(order.budget).toLocaleString()} ₽
                   </span>
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">Дата создания:</span>
                   <span className="detail-value">{formatDate(order.createdAt)}</span>
                 </div>
-                {order.deadline && (
-                  <div className="detail-row">
-                    <span className="detail-label">Срок выполнения:</span>
-                    <span className="detail-value">{formatDate(order.deadline)}</span>
-                  </div>
-                )}
                 {order.completedAt && (
                   <div className="detail-row">
                     <span className="detail-label">Дата завершения:</span>
@@ -222,11 +235,18 @@ const OrderDetailPage = () => {
                 </div>
               )}
 
-              {order.status === 'dispute' && order.disputeReason && (
+              {order.status === 'dispute' && order.dispute && (
                 <div className="dispute-info">
                   <h3>Информация о споре</h3>
-                  <p><strong>Причина:</strong> {order.disputeReason}</p>
-                  <p><strong>Комментарий:</strong> {order.disputeComment}</p>
+                  <p><strong>Причина:</strong> {order.dispute.reason}</p>
+                  <p><strong>Комментарий:</strong> {order.dispute.comment}</p>
+                  <p><strong>Статус:</strong> {order.dispute.status === 'open' ? 'Открыт' : 'Решен'}</p>
+                  {order.dispute.resolution && (
+                    <p><strong>Решение:</strong> {order.dispute.resolution}</p>
+                  )}
+                  {order.dispute.adminComment && (
+                    <p><strong>Комментарий администратора:</strong> {order.dispute.adminComment}</p>
+                  )}
                 </div>
               )}
             </div>
@@ -288,7 +308,7 @@ const OrderDetailPage = () => {
               </div>
               <div className="chat-messages">
                 <div className="chat-empty">
-                  <p>История сообщений появится здесь</p>
+                  <p>Чат будет доступен позже</p>
                 </div>
               </div>
               <div className="chat-input">

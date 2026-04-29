@@ -24,6 +24,7 @@ const OrdersPage = () => {
   const { user, isAuthenticated } = useSelector(state => state.auth);
   const { items: orders, loading, error } = useSelector(state => state.orders);
 
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -32,14 +33,21 @@ const OrdersPage = () => {
       navigate('/login');
       return;
     }
-    dispatch(fetchOrders({ 
-      userId: user?.id, 
-      role: user?.role,
-      status: statusFilter !== 'all' ? statusFilter : undefined 
+    dispatch(fetchOrders({
+      status: statusFilter !== 'all' ? statusFilter : undefined,
+      search: searchQuery || undefined,
     }));
-  }, [dispatch, user, isAuthenticated, navigate, statusFilter]);
+  }, [dispatch, isAuthenticated, navigate, statusFilter, searchQuery]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(searchInput);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const formatDate = (dateString) => {
+    if (!dateString) return '—';
     const date = new Date(dateString);
     return date.toLocaleDateString('ru-RU', {
       year: 'numeric',
@@ -49,19 +57,8 @@ const OrdersPage = () => {
   };
 
   const formatPrice = (price) => {
-    return `${price.toLocaleString()} ₽`;
+    return `${Number(price).toLocaleString()} ₽`;
   };
-
-  const filteredOrders = orders.filter(order => {
-    if (!searchQuery.trim()) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      order.orderNumber?.toLowerCase().includes(query) ||
-      order.freelancerName?.toLowerCase().includes(query) ||
-      order.customerName?.toLowerCase().includes(query) ||
-      order.serviceName?.toLowerCase().includes(query)
-    );
-  });
 
   const title = user?.role === 'freelancer' ? 'Продажи' : 'Покупки';
 
@@ -75,8 +72,8 @@ const OrdersPage = () => {
             <input
               type="text"
               placeholder="Поиск по номеру, имени, услуге..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="form-input search-input"
             />
           </div>
@@ -108,7 +105,7 @@ const OrdersPage = () => {
 
         {!loading && !error && (
           <>
-            {filteredOrders.length === 0 ? (
+            {orders.length === 0 ? (
               <div className="empty-state">
                 <p>У вас пока нет заказов</p>
               </div>
@@ -124,26 +121,26 @@ const OrdersPage = () => {
                   <div className="col-status">Статус</div>
                   <div className="col-price">Сумма</div>
                 </div>
-                {filteredOrders.map(order => (
+                {orders.map(order => (
                   <Link
                     to={`/orders/${order.id}`}
                     key={order.id}
                     className="order-row"
                   >
-                    <div className="col-date">{formatDate(order.createdAt)}</div>
-                    <div className="col-number">{order.orderNumber}</div>
-                    <div className="col-person">
-                      {user?.role === 'freelancer' 
-                        ? order.customerName 
+                    <div className="col-date" data-label="Дата">{formatDate(order.createdAt)}</div>
+                    <div className="col-number" data-label="Номер">{order.orderNumber}</div>
+                    <div className="col-person" data-label="Собеседник">
+                      {user?.role === 'freelancer'
+                        ? order.customerName
                         : order.freelancerName}
                     </div>
-                    <div className="col-service">{order.serviceName}</div>
-                    <div className="col-status">
+                    <div className="col-service" data-label="Услуга">{order.serviceName}</div>
+                    <div className="col-status" data-label="Статус">
                       <span className={`status-badge ${STATUS_CLASS[order.status]}`}>
-                        {STATUS_MAP[order.status]}
+                        {STATUS_MAP[order.status] || order.status}
                       </span>
                     </div>
-                    <div className="col-price">{formatPrice(order.budget)}</div>
+                    <div className="col-price" data-label="Сумма">{formatPrice(order.budget)}</div>
                   </Link>
                 ))}
               </div>
