@@ -1,0 +1,137 @@
+.orders-page {
+  padding: 24px 0 40px;
+}
+
+.orders-title {
+  font-size: 28px;
+  color: #212529;
+  margin-bottom: 24px;
+}
+
+.orders-filters {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.search-box {
+  flex: 1;
+  min-width: 250px;
+}
+
+.search-input {
+  width: 100%;
+}
+
+.filter-box {
+  width: 200px;
+}
+
+.filter-select {
+  width: 100%;
+}
+
+.orders-list {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.orders-table-header {
+  display: grid;
+  grid-template-columns: 120px 140px 1fr 1fr 140px 120px;
+  gap: 12px;
+  padding: 14px 20px;
+  background: #f8f9fa;
+  border-bottom: 2px solid #e0e0e0;
+  font-weight: 600;
+  font-size: 13px;
+  color: #495057;
+}
+
+.order-row {
+  display: grid;
+  grid-template-columns: 120px 140px 1fr 1fr 140px 120px;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  text-decoration: none;
+  color: #212529;
+  transition: background 0.2s;
+  font-size: 14px;
+  align-items: center;
+}
+
+.order-row:last-child {
+  border-bottom: none;
+}
+
+.order-row:hover {
+  background: #f8f9ff;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-progress {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-completed {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-dispute {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.status-returned {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+.col-price {
+  font-weight: 600;
+  color: #0d6efd;
+}
+
+@media (max-width: 992px) {
+  .orders-table-header {
+    display: none;
+  }
+
+  .order-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 16px;
+  }
+
+  .order-row > div {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .order-row > div::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #6c757d;
+    font-size: 12px;
+  }
+
+  .col-date::before { content: 'Дата:'; }
+  .col-number::before { content: 'Номер:'; }
+  .col-person::before { content: 'Собеседник:'; }
+  .col-service::before { content: 'Услуга:'; }
+  .col-status::before { content: 'Статус:'; }
+  .col-price::before { content: 'Сумма:'; }
+}
