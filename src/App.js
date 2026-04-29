@@ -11,6 +11,8 @@ import RegisterPage from './pages/RegisterPage/RegisterPage';
 import CategoryPage from './pages/CategoryPage/CategoryPage';
 import FreelancerProfilePage from './pages/FreelancerProfilePage/FreelancerProfilePage';
 import ProfilePage from './pages/ProfilePage/ProfilePage';
+import OrdersPage from './pages/OrdersPage/OrdersPage';
+import OrderDetailPage from './pages/OrderDetailPage/OrderDetailPage';
 import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
 import './App.css';
 
@@ -41,6 +43,12 @@ function App() {
             {/* Защищенные маршруты */}
             <Route path="/profile" element={
               <PrivateRoute><ProfilePage /></PrivateRoute>
+            } />
+            <Route path="/orders" element={
+              <PrivateRoute><OrdersPage /></PrivateRoute>
+            } />
+            <Route path="/orders/:orderId" element={
+              <PrivateRoute><OrderDetailPage /></PrivateRoute>
             } />
             
             <Route path="*" element={<NotFoundPage />} />

@@ -1,0 +1,281 @@
+.order-detail-page {
+  padding: 24px 0 40px;
+}
+
+.order-detail-layout {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 24px;
+  align-items: start;
+}
+
+.order-info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.order-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.order-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.order-number {
+  font-size: 24px;
+  color: #212529;
+  margin: 0;
+}
+
+.order-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-row {
+  display: flex;
+  gap: 8px;
+}
+
+.detail-label {
+  color: #6c757d;
+  font-size: 14px;
+  min-width: 140px;
+}
+
+.detail-value {
+  color: #212529;
+  font-size: 14px;
+}
+
+.detail-price {
+  font-weight: 600;
+  color: #0d6efd;
+  font-size: 16px;
+}
+
+.detail-description {
+  flex-direction: column;
+  gap: 4px;
+}
+
+.order-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+  flex-wrap: wrap;
+}
+
+.btn-success {
+  background: #28a745;
+  color: white;
+}
+
+.btn-success:hover {
+  background: #218838;
+}
+
+.btn-danger {
+  background: #dc3545;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #c82333;
+}
+
+.btn-warning {
+  background: #ffc107;
+  color: #212529;
+}
+
+.btn-warning:hover {
+  background: #e0a800;
+}
+
+.dispute-info {
+  margin-top: 20px;
+  padding: 16px;
+  background: #fff3f3;
+  border-radius: 8px;
+  border: 1px solid #f5c6cb;
+}
+
+.dispute-info h3 {
+  color: #721c24;
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.dispute-info p {
+  color: #721c24;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.dispute-form-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.dispute-form-card h2 {
+  font-size: 20px;
+  color: #212529;
+  margin-bottom: 16px;
+}
+
+.form-error-message {
+  padding: 10px;
+  background: #fff3f3;
+  color: #dc3545;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+/* Chat Section */
+.order-chat-section {
+  position: sticky;
+  top: 20px;
+}
+
+.chat-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 500px;
+}
+
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.chat-header h3 {
+  font-size: 16px;
+  margin: 0;
+  color: #212529;
+}
+
+.chat-status {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 10px;
+}
+
+.chat-status.online {
+  background: #d4edda;
+  color: #155724;
+}
+
+.chat-status.offline {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+.chat-messages {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.chat-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #adb5bd;
+  font-size: 14px;
+}
+
+.chat-input {
+  padding: 16px 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.chat-textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  font-size: 14px;
+  resize: none;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.chat-textarea:focus {
+  outline: none;
+  border-color: #0d6efd;
+}
+
+.chat-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.btn-attach {
+  background: none;
+  border: none;
+  color: #6c757d;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0;
+}
+
+.btn-attach:hover {
+  color: #0d6efd;
+}
+
+.btn-send {
+  padding: 6px 20px;
+  font-size: 14px;
+}
+
+@media (max-width: 992px) {
+  .order-detail-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .order-chat-section {
+    position: static;
+  }
+
+  .chat-card {
+    height: 400px;
+  }
+}
+
+@media (max-width: 576px) {
+  .order-actions {
+    flex-direction: column;
+  }
+
+  .order-actions .btn {
+    width: 100%;
+  }
+}
