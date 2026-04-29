@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { loginUser, clearError } from '../../store/slices/authSlice';
 import './LoginPage.css';
 
 const LoginPage = () => {
@@ -7,7 +9,23 @@ const LoginPage = () => {
     login: '',
     password: ''
   });
-  const [error, setError] = useState('');
+  const [validationError, setValidationError] = useState('');
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { loading, error, isAuthenticated } = useSelector(state => state.auth);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    return () => {
+      dispatch(clearError());
+    };
+  }, [dispatch]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -15,19 +33,18 @@ const LoginPage = () => {
       ...prev,
       [name]: value
     }));
-    if (error) setError('');
+    if (validationError) setValidationError('');
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
     if (!formData.login.trim() || !formData.password.trim()) {
-      setError('Все поля обязательны для заполнения');
+      setValidationError('Все поля обязательны для заполнения');
       return;
     }
 
-    // Здесь будет вызов API
-    console.log('Login attempt:', formData);
+    dispatch(loginUser(formData));
   };
 
   return (
@@ -36,7 +53,9 @@ const LoginPage = () => {
         <div className="auth-form-container">
           <h1 className="auth-title">Вход в систему</h1>
           
-          {error && <div className="auth-error">{error}</div>}
+          {(validationError || error) && (
+            <div className="auth-error">{validationError || error}</div>
+          )}
           
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
@@ -51,6 +70,7 @@ const LoginPage = () => {
                 onChange={handleChange}
                 className="form-input"
                 placeholder="Введите email или логин"
+                disabled={loading}
               />
             </div>
 
@@ -66,11 +86,16 @@ const LoginPage = () => {
                 onChange={handleChange}
                 className="form-input"
                 placeholder="Введите пароль"
+                disabled={loading}
               />
             </div>
 
-            <button type="submit" className="btn btn-primary btn-block">
-              Войти
+            <button 
+              type="submit" 
+              className="btn btn-primary btn-block"
+              disabled={loading}
+            >
+              {loading ? 'Вход...' : 'Войти'}
             </button>
           </form>
 
