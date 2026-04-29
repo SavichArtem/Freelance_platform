@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { registerUser, clearError } from '../../store/slices/authSlice';
 import './RegisterPage.css';
 
 const RegisterPage = () => {
@@ -12,6 +14,22 @@ const RegisterPage = () => {
   });
 
   const [errors, setErrors] = useState({});
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { loading, error, isAuthenticated } = useSelector(state => state.auth);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    return () => {
+      dispatch(clearError());
+    };
+  }, [dispatch]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -64,8 +82,8 @@ const RegisterPage = () => {
     e.preventDefault();
     
     if (validateForm()) {
-      // Здесь будет вызов API
-      console.log('Register attempt:', formData);
+      const { confirmPassword, ...registerData } = formData;
+      dispatch(registerUser(registerData));
     }
   };
 
@@ -74,6 +92,8 @@ const RegisterPage = () => {
       <div className="container">
         <div className="auth-form-container">
           <h1 className="auth-title">Регистрация</h1>
+          
+          {error && <div className="auth-error">{error}</div>}
           
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
@@ -86,6 +106,7 @@ const RegisterPage = () => {
                 onChange={handleChange}
                 className={`form-input ${errors.login ? 'form-input-error' : ''}`}
                 placeholder="Придумайте логин"
+                disabled={loading}
               />
               {errors.login && <span className="form-error">{errors.login}</span>}
             </div>
@@ -100,6 +121,7 @@ const RegisterPage = () => {
                 onChange={handleChange}
                 className={`form-input ${errors.email ? 'form-input-error' : ''}`}
                 placeholder="Введите email"
+                disabled={loading}
               />
               {errors.email && <span className="form-error">{errors.email}</span>}
             </div>
@@ -114,6 +136,7 @@ const RegisterPage = () => {
                 onChange={handleChange}
                 className={`form-input ${errors.password ? 'form-input-error' : ''}`}
                 placeholder="Придумайте пароль"
+                disabled={loading}
               />
               {errors.password && <span className="form-error">{errors.password}</span>}
             </div>
@@ -128,6 +151,7 @@ const RegisterPage = () => {
                 onChange={handleChange}
                 className={`form-input ${errors.confirmPassword ? 'form-input-error' : ''}`}
                 placeholder="Повторите пароль"
+                disabled={loading}
               />
               {errors.confirmPassword && <span className="form-error">{errors.confirmPassword}</span>}
             </div>
@@ -142,6 +166,7 @@ const RegisterPage = () => {
                     value="customer"
                     checked={formData.role === 'customer'}
                     onChange={handleChange}
+                    disabled={loading}
                   />
                   <span>Заказчик</span>
                 </label>
@@ -152,6 +177,7 @@ const RegisterPage = () => {
                     value="freelancer"
                     checked={formData.role === 'freelancer'}
                     onChange={handleChange}
+                    disabled={loading}
                   />
                   <span>Фрилансер</span>
                 </label>
@@ -159,8 +185,12 @@ const RegisterPage = () => {
               {errors.role && <span className="form-error">{errors.role}</span>}
             </div>
 
-            <button type="submit" className="btn btn-primary btn-block">
-              Зарегистрироваться
+            <button 
+              type="submit" 
+              className="btn btn-primary btn-block"
+              disabled={loading}
+            >
+              {loading ? 'Регистрация...' : 'Зарегистрироваться'}
             </button>
           </form>
 
