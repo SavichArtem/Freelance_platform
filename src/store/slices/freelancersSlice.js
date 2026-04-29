@@ -1,54 +1,14 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { mockFreelancers } from '../mockData';
+import { freelancersApi } from '../../api/freelancersApi';
 
 export const fetchFreelancersByCategory = createAsyncThunk(
   'freelancers/fetchByCategory',
   async ({ categoryId, params }, { rejectWithValue }) => {
     try {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          let filtered;
-          
-          if (categoryId) {
-            switch (Number(categoryId)) {
-              case 1: // Веб-разработка
-                filtered = [mockFreelancers[0]];
-                break;
-              case 2: // Дизайн
-                filtered = [mockFreelancers[1]];
-                break;
-              case 3: // Копирайтинг
-                filtered = [mockFreelancers[2]];
-                break;
-              default:
-                filtered = [];
-            }
-          } else {
-            filtered = mockFreelancers;
-          }
-
-          // Сортировка
-          if (params?.sortBy) {
-            switch (params.sortBy) {
-              case 'rating':
-                filtered.sort((a, b) => b.rating - a.rating);
-                break;
-              case 'price_asc':
-                filtered.sort((a, b) => a.minPrice - b.minPrice);
-                break;
-              case 'price_desc':
-                filtered.sort((a, b) => b.minPrice - a.minPrice);
-                break;
-              default:
-                break;
-            }
-          }
-
-          resolve({ freelancers: filtered, total: filtered.length });
-        }, 300);
-      });
+      const response = await freelancersApi.getByCategory(categoryId, params);
+      return response.data;
     } catch (error) {
-      return rejectWithValue('Ошибка загрузки фрилансеров');
+      return rejectWithValue(error.response?.data?.message || 'Ошибка загрузки фрилансеров');
     }
   }
 );
@@ -57,39 +17,10 @@ export const searchFreelancers = createAsyncThunk(
   'freelancers/search',
   async (params, { rejectWithValue }) => {
     try {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          let results = [...mockFreelancers];
-
-          if (params?.query) {
-            const query = params.query.toLowerCase();
-            results = results.filter(f =>
-              f.login.toLowerCase().includes(query) ||
-              f.Freelancer?.description?.toLowerCase().includes(query)
-            );
-          }
-
-          if (params?.sortBy) {
-            switch (params.sortBy) {
-              case 'rating':
-                results.sort((a, b) => b.rating - a.rating);
-                break;
-              case 'price_asc':
-                results.sort((a, b) => a.minPrice - b.minPrice);
-                break;
-              case 'price_desc':
-                results.sort((a, b) => b.minPrice - a.minPrice);
-                break;
-              default:
-                break;
-            }
-          }
-
-          resolve({ freelancers: results, total: results.length });
-        }, 300);
-      });
+      const response = await freelancersApi.search(params);
+      return response.data;
     } catch (error) {
-      return rejectWithValue('Ошибка поиска');
+      return rejectWithValue(error.response?.data?.message || 'Ошибка поиска');
     }
   }
 );
@@ -117,8 +48,8 @@ const freelancersSlice = createSlice({
       })
       .addCase(fetchFreelancersByCategory.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload.freelancers || action.payload;
-        state.total = action.payload.total || action.payload.length;
+        state.items = action.payload.freelancers;
+        state.total = action.payload.total;
       })
       .addCase(fetchFreelancersByCategory.rejected, (state, action) => {
         state.loading = false;
@@ -130,8 +61,8 @@ const freelancersSlice = createSlice({
       })
       .addCase(searchFreelancers.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload.freelancers || action.payload;
-        state.total = action.payload.total || action.payload.length;
+        state.items = action.payload.freelancers;
+        state.total = action.payload.total;
       })
       .addCase(searchFreelancers.rejected, (state, action) => {
         state.loading = false;

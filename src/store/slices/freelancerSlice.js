@@ -1,22 +1,14 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { mockFreelancers } from '../mockData';
+import { freelancersApi } from '../../api/freelancersApi';
 
 export const fetchFreelancerById = createAsyncThunk(
   'freelancer/fetchById',
   async (id, { rejectWithValue }) => {
     try {
-      return new Promise((resolve, reject) => {
-        setTimeout(() => {
-          const freelancer = mockFreelancers.find(f => f.id === Number(id));
-          if (freelancer) {
-            resolve(freelancer);
-          } else {
-            reject(new Error('Фрилансер не найден'));
-          }
-        }, 300);
-      });
+      const response = await freelancersApi.getById(id);
+      return response.data;
     } catch (error) {
-      return rejectWithValue('Ошибка загрузки профиля фрилансера');
+      return rejectWithValue(error.response?.data?.message || 'Ошибка загрузки профиля');
     }
   }
 );
