@@ -1,4 +1,7 @@
+import { useEffect } from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchCurrentUser } from './store/slices/authSlice';
 import Header from './components/Header/Header';
 import Footer from './components/Footer/Footer';
 import MainPage from './pages/MainPage/MainPage';
@@ -8,6 +11,15 @@ import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
 import './App.css';
 
 function App() {
+  const dispatch = useDispatch();
+  const { token } = useSelector(state => state.auth);
+
+  useEffect(() => {
+    if (token) {
+      dispatch(fetchCurrentUser());
+    }
+  }, [dispatch, token]);
+
   return (
     <HashRouter>
       <div className="app">
