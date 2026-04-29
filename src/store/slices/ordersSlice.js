@@ -1,33 +1,14 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { mockOrders } from '../mockData';
+import { ordersApi } from '../../api/ordersApi';
 
 export const fetchOrders = createAsyncThunk(
   'orders/fetchAll',
-  async ({ userId, role, status } = {}, { rejectWithValue }) => {
+  async (params, { rejectWithValue }) => {
     try {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          let filtered = [...mockOrders];
-
-          if (userId) {
-            if (role === 'customer') {
-              filtered = filtered.filter(o => o.customerId === Number(userId));
-            } else if (role === 'freelancer') {
-              filtered = filtered.filter(o => o.freelancerId === Number(userId));
-            }
-          }
-
-          if (status && status !== 'all') {
-            filtered = filtered.filter(o => o.status === status);
-          }
-
-          filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-          resolve({ orders: filtered, total: filtered.length });
-        }, 300);
-      });
+      const response = await ordersApi.getAll(params);
+      return response.data;
     } catch (error) {
-      return rejectWithValue('Ошибка загрузки заказов');
+      return rejectWithValue(error.response?.data?.message || 'Ошибка загрузки заказов');
     }
   }
 );
@@ -36,18 +17,46 @@ export const fetchOrderById = createAsyncThunk(
   'orders/fetchById',
   async (orderId, { rejectWithValue }) => {
     try {
-      return new Promise((resolve, reject) => {
-        setTimeout(() => {
-          const order = mockOrders.find(o => o.id === Number(orderId));
-          if (order) {
-            resolve(order);
-          } else {
-            reject(new Error('Заказ не найден'));
-          }
-        }, 300);
-      });
+      const response = await ordersApi.getById(orderId);
+      return response.data;
     } catch (error) {
-      return rejectWithValue('Ошибка загрузки заказа');
+      return rejectWithValue(error.response?.data?.message || 'Ошибка загрузки заказа');
+    }
+  }
+);
+
+export const completeOrder = createAsyncThunk(
+  'orders/complete',
+  async (orderId, { rejectWithValue }) => {
+    try {
+      const response = await ordersApi.complete(orderId);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Ошибка подтверждения заказа');
+    }
+  }
+);
+
+export const returnMoney = createAsyncThunk(
+  'orders/returnMoney',
+  async (orderId, { rejectWithValue }) => {
+    try {
+      const response = await ordersApi.returnMoney(orderId);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Ошибка возврата средств');
+    }
+  }
+);
+
+export const openDispute = createAsyncThunk(
+  'orders/openDispute',
+  async ({ orderId, data }, { rejectWithValue }) => {
+    try {
+      const response = await ordersApi.openDispute(orderId, data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || 'Ошибка открытия спора');
     }
   }
 );
@@ -60,6 +69,7 @@ const ordersSlice = createSlice({
     total: 0,
     loading: false,
     error: null,
+    message: null,
   },
   reducers: {
     clearOrders: (state) => {
@@ -70,6 +80,9 @@ const ordersSlice = createSlice({
     clearCurrentOrder: (state) => {
       state.currentOrder = null;
       state.error = null;
+    },
+    clearMessage: (state) => {
+      state.message = null;
     },
   },
   extraReducers: (builder) => {
@@ -98,9 +111,36 @@ const ordersSlice = createSlice({
       .addCase(fetchOrderById.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(completeOrder.fulfilled, (state, action) => {
+        state.message = action.payload.message;
+        if (state.currentOrder) {
+          state.currentOrder.status = 'completed';
+        }
+      })
+      .addCase(completeOrder.rejected, (state, action) => {
+        state.error = action.payload;
+      })
+      .addCase(returnMoney.fulfilled, (state, action) => {
+        state.message = action.payload.message;
+        if (state.currentOrder) {
+          state.currentOrder.status = 'returned';
+        }
+      })
+      .addCase(returnMoney.rejected, (state, action) => {
+        state.error = action.payload;
+      })
+      .addCase(openDispute.fulfilled, (state, action) => {
+        state.message = action.payload.message;
+        if (state.currentOrder) {
+          state.currentOrder.status = 'dispute';
+        }
+      })
+      .addCase(openDispute.rejected, (state, action) => {
+        state.error = action.payload;
       });
   },
 });
 
-export const { clearOrders, clearCurrentOrder } = ordersSlice.actions;
+export const { clearOrders, clearCurrentOrder, clearMessage } = ordersSlice.actions;
 export default ordersSlice.reducer;
