@@ -1,14 +1,54 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { freelancersApi } from '../../api/freelancersApi';
+import { mockFreelancers } from '../mockData';
 
 export const fetchFreelancersByCategory = createAsyncThunk(
   'freelancers/fetchByCategory',
   async ({ categoryId, params }, { rejectWithValue }) => {
     try {
-      const response = await freelancersApi.getByCategory(categoryId, params);
-      return response.data;
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          let filtered;
+          
+          if (categoryId) {
+            switch (Number(categoryId)) {
+              case 1: // Веб-разработка
+                filtered = [mockFreelancers[0]];
+                break;
+              case 2: // Дизайн
+                filtered = [mockFreelancers[1]];
+                break;
+              case 3: // Копирайтинг
+                filtered = [mockFreelancers[2]];
+                break;
+              default:
+                filtered = [];
+            }
+          } else {
+            filtered = mockFreelancers;
+          }
+
+          // Сортировка
+          if (params?.sortBy) {
+            switch (params.sortBy) {
+              case 'rating':
+                filtered.sort((a, b) => b.rating - a.rating);
+                break;
+              case 'price_asc':
+                filtered.sort((a, b) => a.minPrice - b.minPrice);
+                break;
+              case 'price_desc':
+                filtered.sort((a, b) => b.minPrice - a.minPrice);
+                break;
+              default:
+                break;
+            }
+          }
+
+          resolve({ freelancers: filtered, total: filtered.length });
+        }, 300);
+      });
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка загрузки фрилансеров');
+      return rejectWithValue('Ошибка загрузки фрилансеров');
     }
   }
 );
@@ -17,10 +57,39 @@ export const searchFreelancers = createAsyncThunk(
   'freelancers/search',
   async (params, { rejectWithValue }) => {
     try {
-      const response = await freelancersApi.search(params);
-      return response.data;
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          let results = [...mockFreelancers];
+
+          if (params?.query) {
+            const query = params.query.toLowerCase();
+            results = results.filter(f =>
+              f.login.toLowerCase().includes(query) ||
+              f.Freelancer?.description?.toLowerCase().includes(query)
+            );
+          }
+
+          if (params?.sortBy) {
+            switch (params.sortBy) {
+              case 'rating':
+                results.sort((a, b) => b.rating - a.rating);
+                break;
+              case 'price_asc':
+                results.sort((a, b) => a.minPrice - b.minPrice);
+                break;
+              case 'price_desc':
+                results.sort((a, b) => b.minPrice - a.minPrice);
+                break;
+              default:
+                break;
+            }
+          }
+
+          resolve({ freelancers: results, total: results.length });
+        }, 300);
+      });
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка поиска');
+      return rejectWithValue('Ошибка поиска');
     }
   }
 );

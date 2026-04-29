@@ -1,14 +1,19 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { categoriesApi } from '../../api/categoriesApi';
+import { mockCategories } from '../mockData';
 
 export const fetchCategories = createAsyncThunk(
   'categories/fetchAll',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await categoriesApi.getAll();
-      return response.data;
+      // Временная заглушка с mock-данными
+      return new Promise((resolve) => {
+        setTimeout(() => resolve(mockCategories), 300);
+      });
+      // Когда будет готов API, заменить на:
+      // const response = await categoriesApi.getAll();
+      // return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Ошибка загрузки категорий');
+      return rejectWithValue('Ошибка загрузки категорий');
     }
   }
 );
