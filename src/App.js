@@ -7,6 +7,7 @@ import Footer from './components/Footer/Footer';
 import MainPage from './pages/MainPage/MainPage';
 import LoginPage from './pages/LoginPage/LoginPage';
 import RegisterPage from './pages/RegisterPage/RegisterPage';
+import CategoryPage from './pages/CategoryPage/CategoryPage';
 import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
 import './App.css';
 
@@ -29,6 +30,8 @@ function App() {
             <Route path="/" element={<MainPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/categories/:categoryId" element={<CategoryPage />} />
+            <Route path="/services" element={<CategoryPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>

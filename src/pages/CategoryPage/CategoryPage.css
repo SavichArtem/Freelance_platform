@@ -1,0 +1,191 @@
+.category-page {
+  padding: 24px 0 40px;
+}
+
+.category-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.btn-back {
+  background: none;
+  border: 1px solid #ced4da;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #495057;
+  transition: all 0.2s;
+}
+
+.btn-back:hover {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.category-title {
+  font-size: 28px;
+  color: #212529;
+  margin: 0;
+}
+
+.filters-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.sort-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sort-control label {
+  font-size: 14px;
+  color: #495057;
+}
+
+.sort-select {
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #212529;
+  background: white;
+  cursor: pointer;
+}
+
+.sort-select:focus {
+  outline: none;
+  border-color: #0d6efd;
+}
+
+/* Freelancers Grid */
+.freelancers-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.freelancer-card {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.freelancer-card:hover {
+  border-color: #0d6efd;
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.1);
+}
+
+.freelancer-avatar {
+  flex-shrink: 0;
+  width: 80px;
+  height: 80px;
+}
+
+.freelancer-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #0d6efd;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: bold;
+}
+
+.freelancer-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.freelancer-name {
+  color: #212529;
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+.freelancer-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.stars {
+  display: flex;
+  gap: 2px;
+}
+
+.star {
+  font-size: 16px;
+}
+
+.star-full {
+  color: #ffc107;
+}
+
+.star-half {
+  color: #ffc107;
+  opacity: 0.5;
+}
+
+.star-empty {
+  color: #dee2e6;
+}
+
+.rating-value {
+  font-size: 14px;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+.freelancer-bio {
+  color: #6c757d;
+  font-size: 14px;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.freelancer-price {
+  color: #0d6efd;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+@media (max-width: 576px) {
+  .freelancer-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .freelancer-rating {
+    justify-content: center;
+  }
+  
+  .category-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
