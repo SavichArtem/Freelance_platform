@@ -5,4 +5,6 @@ export const authApi = {
   register: (userData) => axiosInstance.post('/auth/register', userData),
   logout: () => axiosInstance.post('/auth/logout'),
   getCurrentUser: () => axiosInstance.get('/auth/me'),
+  updateProfile: (data) => axiosInstance.put('/auth/profile', data),
+  changePassword: (data) => axiosInstance.put('/auth/password', data),
 };

@@ -43,7 +43,7 @@ const User = sequelize.define('User', {
     },
   },
   avatar: {
-    type: DataTypes.STRING(255),
+    type: DataTypes.TEXT,
     allowNull: true,
   },
   registrationDate: {
