@@ -28,7 +28,13 @@ const Header = () => {
             <ul className="nav-menu">
               <li><Link to="/services" className={isActive('/services')}>Услуги</Link></li>
               {isAuthenticated && (
-                <li><Link to="/messages" className={isActive('/messages')}>Сообщения</Link></li>
+                <>
+                  <li><Link to="/orders" className={isActive('/orders')}>Мои заказы</Link></li>
+                  <li><Link to="/messages" className={isActive('/messages')}>Сообщения</Link></li>
+                  {user?.role === 'admin' && (
+                    <li><Link to="/admin" className={isActive('/admin')}>Админ-панель</Link></li>
+                  )}
+                </>
               )}
             </ul>
           </nav>
@@ -38,9 +44,6 @@ const Header = () => {
               <>
                 <Link to="/profile" className="auth-link">
                   {user?.login || 'Профиль'}
-                </Link>
-                <Link to="/orders" className="auth-link">
-                  Мои заказы
                 </Link>
                 <button onClick={handleLogout} className="auth-link logout-btn">
                   Выход

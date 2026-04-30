@@ -5,6 +5,7 @@ import { fetchCurrentUser } from './store/slices/authSlice';
 import Header from './components/Header/Header';
 import Footer from './components/Footer/Footer';
 import PrivateRoute from './components/PrivateRoute/PrivateRoute';
+import AdminRoute from './components/PrivateRoute/AdminRoute';
 import MainPage from './pages/MainPage/MainPage';
 import LoginPage from './pages/LoginPage/LoginPage';
 import RegisterPage from './pages/RegisterPage/RegisterPage';
@@ -13,6 +14,7 @@ import FreelancerProfilePage from './pages/FreelancerProfilePage/FreelancerProfi
 import ProfilePage from './pages/ProfilePage/ProfilePage';
 import OrdersPage from './pages/OrdersPage/OrdersPage';
 import OrderDetailPage from './pages/OrderDetailPage/OrderDetailPage';
+import AdminPage from './pages/AdminPage/AdminPage';
 import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
 import './App.css';
 
@@ -39,7 +41,7 @@ function App() {
             <Route path="/categories/:categoryId" element={<CategoryPage />} />
             <Route path="/services" element={<CategoryPage />} />
             <Route path="/freelancer/:freelancerId" element={<FreelancerProfilePage />} />
-            
+
             {/* Защищенные маршруты */}
             <Route path="/profile" element={
               <PrivateRoute><ProfilePage /></PrivateRoute>
@@ -50,7 +52,12 @@ function App() {
             <Route path="/orders/:orderId" element={
               <PrivateRoute><OrderDetailPage /></PrivateRoute>
             } />
-            
+
+            {/* Админ маршруты */}
+            <Route path="/admin" element={
+              <AdminRoute><AdminPage /></AdminRoute>
+            } />
+
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>
