@@ -9,6 +9,7 @@ const FreelancerProfilePage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { profile, loading, error } = useSelector(state => state.freelancer);
+  const { user, isAuthenticated } = useSelector(state => state.auth);
 
   useEffect(() => {
     if (freelancerId) {
@@ -35,6 +36,15 @@ const FreelancerProfilePage = () => {
       month: 'long',
       day: 'numeric',
     });
+  };
+
+  const handleMessageClick = () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    const partnerId = profile?.userId || profile?.id;
+    navigate(`/messages/user/${partnerId}`);
   };
 
   if (loading) {
@@ -85,35 +95,37 @@ const FreelancerProfilePage = () => {
               <span className="stars">{renderStars(profile.rating || 0)}</span>
               <span className="rating-value">{profile.rating || 0} / 5</span>
             </div>
-            {profile.Freelancer?.description && (
-              <p className="profile-description">{profile.Freelancer.description}</p>
+            {profile.description && (
+              <p className="profile-description">{profile.description}</p>
             )}
           </div>
-          <button className="btn btn-primary btn-message">
-            Написать сообщение
-          </button>
+          {isAuthenticated && user?.id !== (profile?.userId || profile?.id) && (
+            <button onClick={handleMessageClick} className="btn btn-primary btn-message">
+              Написать сообщение
+            </button>
+          )}
         </div>
 
-        {profile.Freelancer?.services && profile.Freelancer.services.length > 0 && (
+        {profile.services && profile.services.length > 0 && (
           <section className="profile-section">
             <h2 className="section-title">Услуги</h2>
             <div className="services-grid">
-              {profile.Freelancer.services.map(service => (
+              {profile.services.map(service => (
                 <div key={service.id} className="service-card">
                   <h3 className="service-name">{service.name}</h3>
                   <p className="service-description">{service.description}</p>
-                  <div className="service-price">{service.price.toLocaleString()} ₽</div>
+                  <div className="service-price">{Number(service.price).toLocaleString()} ₽</div>
                 </div>
               ))}
             </div>
           </section>
         )}
 
-        {profile.Freelancer?.portfolioItems && profile.Freelancer.portfolioItems.length > 0 && (
+        {profile.portfolioItems && profile.portfolioItems.length > 0 && (
           <section className="profile-section">
             <h2 className="section-title">Портфолио</h2>
             <div className="portfolio-grid">
-              {profile.Freelancer.portfolioItems.map(item => (
+              {profile.portfolioItems.map(item => (
                 <div key={item.id} className="portfolio-card">
                   <div className="portfolio-image">
                     {item.image ? (

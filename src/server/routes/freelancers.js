@@ -1,4 +1,5 @@
 const express = require('express');
+const { Op } = require('sequelize');
 const { Freelancer, User, Service, Portfolio, Review, Order } = require('../models');
 
 const router = express.Router();
@@ -7,28 +8,38 @@ const router = express.Router();
 router.get('/search', async (req, res, next) => {
   try {
     const { query, sortBy } = req.query;
-    const { Op } = require('sequelize');
+
+    const whereClause = {};
+    if (query) {
+      whereClause.login = { [Op.iLike]: `%${query}%` };
+    }
 
     const freelancers = await Freelancer.findAll({
-      include: [{
-        model: User,
-        attributes: ['id', 'login', 'avatar'],
-        where: query ? {
-          login: { [Op.iLike]: `%${query}%` },
-        } : undefined,
-      }, {
-        model: Service,
-      }],
+      include: [
+        {
+          model: User,
+          attributes: ['id', 'login', 'avatar'],
+          where: query ? whereClause : undefined,
+        },
+        {
+          model: Service,
+        },
+      ],
     });
 
-    let results = freelancers.map(f => ({
-      id: f.id,
-      login: f.User.login,
-      avatar: f.User.avatar,
-      rating: f.rating,
-      description: f.description,
-      minPrice: Math.min(...f.Services.map(s => Number(s.price))),
-    }));
+    let results = freelancers
+      .filter(f => f.User)
+      .map(f => ({
+        id: f.id,
+        userId: f.User.id,
+        login: f.User.login,
+        avatar: f.User.avatar,
+        rating: f.rating,
+        description: f.description,
+        minPrice: f.Services.length > 0
+          ? Math.min(...f.Services.map(s => Number(s.price)))
+          : 0,
+      }));
 
     if (sortBy === 'price_asc') {
       results.sort((a, b) => a.minPrice - b.minPrice);
@@ -80,6 +91,7 @@ router.get('/:id', async (req, res, next) => {
 
     res.json({
       id: freelancer.id,
+      userId: freelancer.User.id,
       login: freelancer.User.login,
       avatar: freelancer.User.avatar,
       registrationDate: freelancer.User.registrationDate,

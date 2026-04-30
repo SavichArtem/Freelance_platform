@@ -9,7 +9,7 @@ const Message = sequelize.define('Message', {
   },
   orderId: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,
     field: 'order_id',
     references: {
       model: 'Orders',
@@ -25,12 +25,21 @@ const Message = sequelize.define('Message', {
       key: 'id',
     },
   },
+  receiverId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    field: 'receiver_id',
+    references: {
+      model: 'Users',
+      key: 'id',
+    },
+  },
   text: {
     type: DataTypes.TEXT,
     allowNull: true,
   },
   file: {
-    type: DataTypes.STRING(255),
+    type: DataTypes.TEXT,
     allowNull: true,
   },
   createdAt: {

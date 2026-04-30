@@ -55,6 +55,11 @@ Message.belongsTo(Order, { foreignKey: 'orderId' });
 User.hasMany(Message, { foreignKey: 'senderId' });
 Message.belongsTo(User, { foreignKey: 'senderId' });
 
+Message.belongsTo(User, { foreignKey: 'senderId', as: 'Sender' });
+Message.belongsTo(User, { foreignKey: 'receiverId', as: 'Receiver' });
+Order.hasMany(Message, { foreignKey: 'orderId' });
+Message.belongsTo(Order, { foreignKey: 'orderId' });
+
 module.exports = {
   sequelize,
   User,
