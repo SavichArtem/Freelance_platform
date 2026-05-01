@@ -19,6 +19,7 @@ import MessagesPage from './pages/MessagesPage/MessagesPage';
 import ChatPage from './pages/ChatPage/ChatPage';
 import AdminPage from './pages/AdminPage/AdminPage';
 import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage/ForgotPasswordPage';
 import './App.css';
 
 function AppContent() {
@@ -45,6 +46,7 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<MainPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/categories/:categoryId" element={<CategoryPage />} />
           <Route path="/services" element={<CategoryPage />} />
