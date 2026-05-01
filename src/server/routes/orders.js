@@ -2,10 +2,11 @@ const express = require('express');
 const { Op } = require('sequelize');
 const { Order, User, Freelancer, Service, Dispute } = require('../models');
 const { protect } = require('../middleware/authMiddleware');
+const { createNotification } = require('./notifications');
 
 const router = express.Router();
 
-// GET /api/orders - получить заказы пользователя
+// GET /api/orders
 router.get('/', protect, async (req, res, next) => {
   try {
     const { status, search } = req.query;
@@ -32,26 +33,16 @@ router.get('/', protect, async (req, res, next) => {
     const orders = await Order.findAll({
       where: whereClause,
       include: [
-        {
-          model: User,
-          attributes: ['id', 'login'],
-        },
+        { model: User, attributes: ['id', 'login'] },
         {
           model: Freelancer,
-          include: [{
-            model: User,
-            attributes: ['id', 'login'],
-          }],
+          include: [{ model: User, attributes: ['id', 'login'] }],
         },
-        {
-          model: Service,
-          attributes: ['id', 'name', 'price'],
-        },
+        { model: Service, attributes: ['id', 'name', 'price'] },
       ],
       order: [['createdAt', 'DESC']],
     });
 
-    // Форматируем ответ
     let result = orders.map(order => ({
       id: order.id,
       orderNumber: `ORD-${String(order.id).padStart(6, '0')}`,
@@ -64,14 +55,13 @@ router.get('/', protect, async (req, res, next) => {
       completedAt: order.completedAt,
     }));
 
-    // Поиск по номеру заказа или имени
     if (search) {
-      const searchLower = search.toLowerCase();
+      const s = search.toLowerCase();
       result = result.filter(o =>
-        o.orderNumber.toLowerCase().includes(searchLower) ||
-        o.customerName.toLowerCase().includes(searchLower) ||
-        o.freelancerName.toLowerCase().includes(searchLower) ||
-        o.serviceName.toLowerCase().includes(searchLower)
+        o.orderNumber.toLowerCase().includes(s) ||
+        o.customerName.toLowerCase().includes(s) ||
+        o.freelancerName.toLowerCase().includes(s) ||
+        o.serviceName.toLowerCase().includes(s)
       );
     }
 
@@ -81,29 +71,18 @@ router.get('/', protect, async (req, res, next) => {
   }
 });
 
-// GET /api/orders/:id - получить заказ по ID
+// GET /api/orders/:id
 router.get('/:id', protect, async (req, res, next) => {
   try {
     const order = await Order.findByPk(req.params.id, {
       include: [
-        {
-          model: User,
-          attributes: ['id', 'login'],
-        },
+        { model: User, attributes: ['id', 'login'] },
         {
           model: Freelancer,
-          include: [{
-            model: User,
-            attributes: ['id', 'login'],
-          }],
+          include: [{ model: User, attributes: ['id', 'login'] }],
         },
-        {
-          model: Service,
-          attributes: ['id', 'name', 'description', 'price'],
-        },
-        {
-          model: Dispute,
-        },
+        { model: Service, attributes: ['id', 'name', 'description', 'price'] },
+        { model: Dispute },
       ],
     });
 
@@ -143,26 +122,31 @@ router.get('/:id', protect, async (req, res, next) => {
   }
 });
 
-// PUT /api/orders/:id/complete - подтвердить выполнение
+// PUT /api/orders/:id/complete
 router.put('/:id/complete', protect, async (req, res, next) => {
   try {
-    const order = await Order.findByPk(req.params.id);
+    const order = await Order.findByPk(req.params.id, {
+      include: [
+        { model: Freelancer, include: [{ model: User }] },
+      ],
+    });
 
-    if (!order) {
-      return res.status(404).json({ message: 'Заказ не найден' });
-    }
-
-    if (order.userId !== req.user.id) {
-      return res.status(403).json({ message: 'Только заказчик может подтвердить выполнение' });
-    }
-
-    if (order.status !== 'in_progress') {
-      return res.status(400).json({ message: 'Заказ уже завершен или находится в споре' });
-    }
+    if (!order) return res.status(404).json({ message: 'Заказ не найден' });
+    if (order.userId !== req.user.id) return res.status(403).json({ message: 'Только заказчик может подтвердить выполнение' });
+    if (order.status !== 'in_progress') return res.status(400).json({ message: 'Заказ уже завершен или в споре' });
 
     order.status = 'completed';
     order.completedAt = new Date();
     await order.save();
+
+    if (order.Freelancer?.User) {
+      await createNotification(
+        order.Freelancer.User.id,
+        'order_completed',
+        'Заказ выполнен',
+        `Заказ ${`ORD-${String(order.id).padStart(6, '0')}`} подтвержден. Средства переведены.`
+      );
+    }
 
     res.json({ message: 'Работа принята, деньги переведены фрилансеру', order });
   } catch (error) {
@@ -170,26 +154,25 @@ router.put('/:id/complete', protect, async (req, res, next) => {
   }
 });
 
-// PUT /api/orders/:id/return - вернуть деньги заказчику
+// PUT /api/orders/:id/return
 router.put('/:id/return', protect, async (req, res, next) => {
   try {
     const order = await Order.findByPk(req.params.id);
-
-    if (!order) {
-      return res.status(404).json({ message: 'Заказ не найден' });
-    }
+    if (!order) return res.status(404).json({ message: 'Заказ не найден' });
 
     const freelancer = await Freelancer.findOne({ where: { userId: req.user.id } });
-    if (!freelancer || order.freelancerId !== freelancer.id) {
-      return res.status(403).json({ message: 'Только фрилансер может вернуть деньги' });
-    }
-
-    if (order.status !== 'in_progress') {
-      return res.status(400).json({ message: 'Заказ уже завершен или находится в споре' });
-    }
+    if (!freelancer || order.freelancerId !== freelancer.id) return res.status(403).json({ message: 'Только фрилансер может вернуть деньги' });
+    if (order.status !== 'in_progress') return res.status(400).json({ message: 'Заказ уже завершен или в споре' });
 
     order.status = 'returned';
     await order.save();
+
+    await createNotification(
+      order.userId,
+      'order_returned',
+      'Возврат средств',
+      `Фрилансер вернул деньги по заказу ${`ORD-${String(order.id).padStart(6, '0')}`}.`
+    );
 
     res.json({ message: 'Средства возвращены заказчику', order });
   } catch (error) {
@@ -197,37 +180,34 @@ router.put('/:id/return', protect, async (req, res, next) => {
   }
 });
 
-// PUT /api/orders/:id/dispute - открыть спор
+// PUT /api/orders/:id/dispute
 router.put('/:id/dispute', protect, async (req, res, next) => {
   try {
     const { reason, comment } = req.body;
-    const order = await Order.findByPk(req.params.id);
+    const order = await Order.findByPk(req.params.id, {
+      include: [
+        { model: Freelancer, include: [{ model: User }] },
+      ],
+    });
 
-    if (!order) {
-      return res.status(404).json({ message: 'Заказ не найден' });
-    }
-
-    if (order.userId !== req.user.id) {
-      return res.status(403).json({ message: 'Только заказчик может открыть спор' });
-    }
-
-    if (order.status !== 'in_progress') {
-      return res.status(400).json({ message: 'Спор можно открыть только для активного заказа' });
-    }
-
-    if (!reason || !comment) {
-      return res.status(400).json({ message: 'Укажите причину и комментарий' });
-    }
+    if (!order) return res.status(404).json({ message: 'Заказ не найден' });
+    if (order.userId !== req.user.id) return res.status(403).json({ message: 'Только заказчик может открыть спор' });
+    if (order.status !== 'in_progress') return res.status(400).json({ message: 'Спор можно открыть только для активного заказа' });
+    if (!reason || !comment) return res.status(400).json({ message: 'Укажите причину и комментарий' });
 
     order.status = 'dispute';
     await order.save();
 
-    await Dispute.create({
-      orderId: order.id,
-      reason,
-      comment,
-      status: 'open',
-    });
+    await Dispute.create({ orderId: order.id, reason, comment, status: 'open' });
+
+    if (order.Freelancer?.User) {
+      await createNotification(
+        order.Freelancer.User.id,
+        'dispute_opened',
+        'Открыт спор',
+        `Заказчик открыл спор по заказу ${`ORD-${String(order.id).padStart(6, '0')}`}.`
+      );
+    }
 
     res.json({ message: 'Спор открыт, ожидайте решения администратора', order });
   } catch (error) {

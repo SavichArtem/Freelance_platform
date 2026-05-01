@@ -6,6 +6,7 @@ import freelancerReducer from './slices/freelancerSlice';
 import filtersReducer from './slices/filtersSlice';
 import ordersReducer from './slices/ordersSlice';
 import messagesReducer from './slices/messagesSlice';
+import notificationsReducer from './slices/notificationsSlice';
 import adminReducer from './slices/adminSlice';
 
 export const store = configureStore({
@@ -17,6 +18,7 @@ export const store = configureStore({
     filters: filtersReducer,
     orders: ordersReducer,
     messages: messagesReducer,
+    notifications: notificationsReducer,
     admin: adminReducer,
   },
 });

@@ -2,6 +2,7 @@ const express = require('express');
 const { Op } = require('sequelize');
 const { Message, Order, User, Freelancer } = require('../models');
 const { protect } = require('../middleware/authMiddleware');
+const { createNotification } = require('./notifications');
 
 const router = express.Router();
 
@@ -42,7 +43,6 @@ router.get('/chats', async (req, res, next) => {
           participantId: partnerId,
           participantName: partner.login || 'Пользователь',
           participantAvatar: partner.avatar || null,
-          participantStatus: 'offline',
           lastMessage: msg.text || 'Файл',
           lastMessageTime: msg.createdAt,
           unread: 0,
@@ -53,7 +53,6 @@ router.get('/chats', async (req, res, next) => {
 
     res.json(Array.from(chatMap.values()));
   } catch (error) {
-    console.error('Error fetching chats:', error);
     next(error);
   }
 });
@@ -64,9 +63,7 @@ router.get('/user/:userId', async (req, res, next) => {
     const currentUserId = req.user.id;
     const partnerId = Number(req.params.userId);
 
-    const partner = await User.findByPk(partnerId, {
-      attributes: ['id', 'login', 'avatar'],
-    });
+    const partner = await User.findByPk(partnerId, { attributes: ['id', 'login', 'avatar'] });
 
     const messages = await Message.findAll({
       where: {
@@ -75,18 +72,12 @@ router.get('/user/:userId', async (req, res, next) => {
           { senderId: partnerId, receiverId: currentUserId },
         ],
       },
-      include: [
-        { model: User, as: 'Sender', attributes: ['id', 'login'] },
-      ],
+      include: [{ model: User, as: 'Sender', attributes: ['id', 'login'] }],
       order: [['createdAt', 'ASC']],
     });
 
     res.json({
-      partner: partner ? {
-        id: partner.id,
-        login: partner.login,
-        avatar: partner.avatar,
-      } : null,
+      partner: partner ? { id: partner.id, login: partner.login, avatar: partner.avatar } : null,
       messages: messages.map(m => ({
         id: m.id,
         text: m.text,
@@ -97,7 +88,6 @@ router.get('/user/:userId', async (req, res, next) => {
       })),
     });
   } catch (error) {
-    console.error('Error fetching user messages:', error);
     next(error);
   }
 });
@@ -110,18 +100,13 @@ router.get('/order/:orderId', async (req, res, next) => {
     const order = await Order.findByPk(orderId, {
       include: [
         { model: User, attributes: ['id', 'login', 'avatar'] },
-        {
-          model: Freelancer,
-          include: [{ model: User, attributes: ['id', 'login', 'avatar'] }],
-        },
+        { model: Freelancer, include: [{ model: User, attributes: ['id', 'login', 'avatar'] }] },
       ],
     });
 
     const messages = await Message.findAll({
       where: { orderId },
-      include: [
-        { model: User, as: 'Sender', attributes: ['id', 'login'] },
-      ],
+      include: [{ model: User, as: 'Sender', attributes: ['id', 'login'] }],
       order: [['createdAt', 'ASC']],
     });
 
@@ -130,11 +115,7 @@ router.get('/order/:orderId', async (req, res, next) => {
       : order?.User;
 
     res.json({
-      partner: partner ? {
-        id: partner.id,
-        login: partner.login,
-        avatar: partner.avatar,
-      } : null,
+      partner: partner ? { id: partner.id, login: partner.login, avatar: partner.avatar } : null,
       messages: messages.map(m => ({
         id: m.id,
         text: m.text,
@@ -145,7 +126,6 @@ router.get('/order/:orderId', async (req, res, next) => {
       })),
     });
   } catch (error) {
-    console.error('Error fetching order messages:', error);
     next(error);
   }
 });
@@ -159,20 +139,26 @@ router.post('/user/:userId', async (req, res, next) => {
     if (req.user.id === receiverId) {
       return res.status(400).json({ message: 'Нельзя отправить сообщение самому себе' });
     }
-
     if (!text && !file) {
       return res.status(400).json({ message: 'Введите сообщение' });
     }
 
     const message = await Message.create({
       senderId: req.user.id,
-      receiverId: receiverId,
+      receiverId,
       orderId: null,
       text: text || '',
       file: file ? JSON.stringify(file) : null,
     });
 
     const user = await User.findByPk(req.user.id);
+
+    await createNotification(
+      receiverId,
+      'new_message',
+      'Новое сообщение',
+      `${user.login} отправил вам сообщение.`
+    );
 
     res.status(201).json({
       id: message.id,
@@ -183,7 +169,6 @@ router.post('/user/:userId', async (req, res, next) => {
       timestamp: message.createdAt,
     });
   } catch (error) {
-    console.error('Error sending message:', error);
     next(error);
   }
 });
@@ -201,12 +186,34 @@ router.post('/order/:orderId', async (req, res, next) => {
     const message = await Message.create({
       senderId: req.user.id,
       receiverId: null,
-      orderId: orderId,
+      orderId,
       text: text || '',
       file: file ? JSON.stringify(file) : null,
     });
 
     const user = await User.findByPk(req.user.id);
+
+    const order = await Order.findByPk(orderId, {
+      include: [
+        { model: User },
+        { model: Freelancer, include: [{ model: User }] },
+      ],
+    });
+
+    if (order) {
+      const receiverId = order.userId === req.user.id
+        ? order.Freelancer?.User?.id
+        : order.userId;
+
+      if (receiverId) {
+        await createNotification(
+          receiverId,
+          'new_message',
+          'Новое сообщение',
+          `${user.login} отправил сообщение в заказ ${`ORD-${String(orderId).padStart(6, '0')}`}.`
+        );
+      }
+    }
 
     res.status(201).json({
       id: message.id,
@@ -217,7 +224,6 @@ router.post('/order/:orderId', async (req, res, next) => {
       timestamp: message.createdAt,
     });
   } catch (error) {
-    console.error('Error sending order message:', error);
     next(error);
   }
 });

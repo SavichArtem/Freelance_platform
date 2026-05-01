@@ -5,6 +5,7 @@ const freelancersRoutes = require('./freelancers');
 const ordersRoutes = require('./orders');
 const adminRoutes = require('./admin');
 const messagesRoutes = require('./messages');
+const notificationsRoutes = require('./notifications');
 
 const router = express.Router();
 
@@ -14,5 +15,7 @@ router.use('/freelancers', freelancersRoutes);
 router.use('/orders', ordersRoutes);
 router.use('/admin', adminRoutes);
 router.use('/messages', messagesRoutes);
+router.use('/notifications', notificationsRoutes.router);
+
 
 module.exports = router;
