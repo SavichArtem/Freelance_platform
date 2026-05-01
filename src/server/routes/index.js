@@ -6,6 +6,7 @@ const ordersRoutes = require('./orders');
 const adminRoutes = require('./admin');
 const messagesRoutes = require('./messages');
 const notificationsRoutes = require('./notifications');
+const reviewsRoutes = require('./reviews');
 
 const router = express.Router();
 
@@ -16,6 +17,7 @@ router.use('/orders', ordersRoutes);
 router.use('/admin', adminRoutes);
 router.use('/messages', messagesRoutes);
 router.use('/notifications', notificationsRoutes.router);
+router.use('/reviews', reviewsRoutes);
 
 
 module.exports = router;

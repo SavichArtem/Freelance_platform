@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchOrderById, completeOrder, returnMoney, openDispute, clearMessage } from '../../store/slices/ordersSlice';
+import { reviewsApi } from '../../api/reviewsApi';
 import './OrderDetailPage.css';
 
 const STATUS_MAP = {
@@ -33,12 +34,16 @@ const OrderDetailPage = () => {
   const { currentOrder: order, loading, error, message } = useSelector(state => state.orders);
 
   const [showDisputeForm, setShowDisputeForm] = useState(false);
-  const [disputeData, setDisputeData] = useState({
-    reason: '',
-    comment: '',
-  });
+  const [disputeData, setDisputeData] = useState({ reason: '', comment: '' });
   const [disputeError, setDisputeError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+
+  // Состояния для отзыва
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewText, setReviewText] = useState('');
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [reviewError, setReviewError] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
     if (orderId) {
@@ -57,6 +62,16 @@ const OrderDetailPage = () => {
       setTimeout(() => setSuccessMessage(''), 5000);
     }
   }, [message, dispatch, orderId]);
+
+  useEffect(() => {
+    if (order?.status === 'completed' && isCustomer) {
+      reviewsApi.checkOrder(order.id)
+        .then(res => {
+          if (res.data.alreadyReviewed) setReviewSubmitted(true);
+        })
+        .catch(() => {});
+    }
+  }, [order, isCustomer]);
 
   const formatDate = (dateString) => {
     if (!dateString) return '—';
@@ -103,17 +118,37 @@ const OrderDetailPage = () => {
 
     dispatch(openDispute({ orderId: order.id, data: disputeData }))
       .unwrap()
-      .then(() => {
-        setShowDisputeForm(false);
-      })
-      .catch((err) => {
-        setDisputeError(err);
-      });
+      .then(() => setShowDisputeForm(false))
+      .catch((err) => setDisputeError(err));
   };
 
   const handleReturnMoney = () => {
     if (window.confirm('Вы уверены, что хотите вернуть деньги заказчику?')) {
       dispatch(returnMoney(order.id));
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (!reviewText.trim()) {
+      setReviewError('Напишите текст отзыва');
+      return;
+    }
+    setSubmittingReview(true);
+    setReviewError('');
+
+    try {
+      await reviewsApi.create({
+        orderId: order.id,
+        rating: reviewRating,
+        text: reviewText,
+      });
+      setReviewSubmitted(true);
+      setSuccessMessage('Отзыв успешно отправлен');
+      setTimeout(() => setSuccessMessage(''), 5000);
+    } catch (error) {
+      setReviewError(error.response?.data?.message || 'Ошибка при отправке отзыва');
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
@@ -135,9 +170,7 @@ const OrderDetailPage = () => {
       <div className="order-detail-page">
         <div className="container">
           <div className="error-message">{error}</div>
-          <button onClick={() => navigate(-1)} className="btn-back">
-            ← Назад к заказам
-          </button>
+          <button onClick={() => navigate(-1)} className="btn-back">← Назад к заказам</button>
         </div>
       </div>
     );
@@ -151,9 +184,7 @@ const OrderDetailPage = () => {
   return (
     <div className="order-detail-page">
       <div className="container">
-        <button onClick={() => navigate(-1)} className="btn-back">
-          ← Назад к заказам
-        </button>
+        <button onClick={() => navigate(-1)} className="btn-back">← Назад к заказам</button>
 
         {successMessage && (
           <div className="message-alert message-success">{successMessage}</div>
@@ -176,9 +207,7 @@ const OrderDetailPage = () => {
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">Бюджет:</span>
-                  <span className="detail-value detail-price">
-                    {Number(order.budget).toLocaleString()} ₽
-                  </span>
+                  <span className="detail-value detail-price">{Number(order.budget).toLocaleString()} ₽</span>
                 </div>
                 <div className="detail-row">
                   <span className="detail-label">Дата создания:</span>
@@ -191,12 +220,8 @@ const OrderDetailPage = () => {
                   </div>
                 )}
                 <div className="detail-row">
-                  <span className="detail-label">
-                    {isCustomer ? 'Фрилансер:' : 'Заказчик:'}
-                  </span>
-                  <span className="detail-value">
-                    {isCustomer ? order.freelancerName : order.customerName}
-                  </span>
+                  <span className="detail-label">{isCustomer ? 'Фрилансер:' : 'Заказчик:'}</span>
+                  <span className="detail-value">{isCustomer ? order.freelancerName : order.customerName}</span>
                 </div>
                 {order.description && (
                   <div className="detail-row detail-description">
@@ -210,27 +235,12 @@ const OrderDetailPage = () => {
                 <div className="order-actions">
                   {isCustomer && (
                     <>
-                      <button
-                        onClick={handleConfirmComplete}
-                        className="btn btn-success"
-                      >
-                        Подтвердить выполнение
-                      </button>
-                      <button
-                        onClick={handleOpenDispute}
-                        className="btn btn-danger"
-                      >
-                        Открыть спор
-                      </button>
+                      <button onClick={handleConfirmComplete} className="btn btn-success">Подтвердить выполнение</button>
+                      <button onClick={handleOpenDispute} className="btn btn-danger">Открыть спор</button>
                     </>
                   )}
                   {isFreelancer && (
-                    <button
-                      onClick={handleReturnMoney}
-                      className="btn btn-warning"
-                    >
-                      Вернуть деньги заказчику
-                    </button>
+                    <button onClick={handleReturnMoney} className="btn btn-warning">Вернуть деньги заказчику</button>
                   )}
                 </div>
               )}
@@ -242,11 +252,51 @@ const OrderDetailPage = () => {
                   <p><strong>Комментарий:</strong> {order.dispute.comment}</p>
                   <p><strong>Статус:</strong> {order.dispute.status === 'open' ? 'Открыт' : 'Решен'}</p>
                   {order.dispute.resolution && (
-                    <p><strong>Решение:</strong> {order.dispute.resolution}</p>
+                    <p><strong>Решение:</strong> {order.dispute.resolution === 'customer' ? 'В пользу заказчика' : 'В пользу фрилансера'}</p>
                   )}
                   {order.dispute.adminComment && (
                     <p><strong>Комментарий администратора:</strong> {order.dispute.adminComment}</p>
                   )}
+                </div>
+              )}
+
+              {order.status === 'completed' && isCustomer && !reviewSubmitted && (
+                <div className="review-section">
+                  <h3>Оставить отзыв</h3>
+                  {reviewError && <div className="form-error-message">{reviewError}</div>}
+                  <div className="stars-input">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <span
+                        key={star}
+                        className={`star-input ${star <= reviewRating ? 'star-active' : ''}`}
+                        onClick={() => setReviewRating(star)}
+                      >
+                        ★
+                      </span>
+                    ))}
+                  </div>
+                  <textarea
+                    value={reviewText}
+                    onChange={(e) => setReviewText(e.target.value)}
+                    className="form-input form-textarea"
+                    rows="3"
+                    placeholder="Напишите отзыв о работе фрилансера..."
+                    maxLength={1000}
+                  />
+                  <div className="review-char-count">{reviewText.length}/1000</div>
+                  <button
+                    onClick={handleSubmitReview}
+                    className="btn btn-primary"
+                    disabled={submittingReview}
+                  >
+                    {submittingReview ? 'Отправка...' : 'Отправить отзыв'}
+                  </button>
+                </div>
+              )}
+
+              {reviewSubmitted && (
+                <div className="review-submitted">
+                  <p>Вы уже оставили отзыв на этот заказ</p>
                 </div>
               )}
             </div>
@@ -254,18 +304,11 @@ const OrderDetailPage = () => {
             {showDisputeForm && (
               <div className="dispute-form-card">
                 <h2>Открытие спора</h2>
-                {disputeError && (
-                  <div className="form-error-message">{disputeError}</div>
-                )}
+                {disputeError && <div className="form-error-message">{disputeError}</div>}
                 <form onSubmit={handleDisputeSubmit}>
                   <div className="form-group">
                     <label className="form-label">Причина спора</label>
-                    <select
-                      name="reason"
-                      value={disputeData.reason}
-                      onChange={handleDisputeChange}
-                      className="form-input"
-                    >
+                    <select name="reason" value={disputeData.reason} onChange={handleDisputeChange} className="form-input">
                       <option value="">Выберите причину</option>
                       {DISPUTE_REASONS.map(reason => (
                         <option key={reason} value={reason}>{reason}</option>
@@ -284,16 +327,8 @@ const OrderDetailPage = () => {
                     />
                   </div>
                   <div className="form-actions">
-                    <button type="submit" className="btn btn-danger">
-                      Отправить
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={() => setShowDisputeForm(false)}
-                    >
-                      Отмена
-                    </button>
+                    <button type="submit" className="btn btn-danger">Отправить</button>
+                    <button type="button" className="btn btn-secondary" onClick={() => setShowDisputeForm(false)}>Отмена</button>
                   </div>
                 </form>
               </div>
@@ -304,26 +339,10 @@ const OrderDetailPage = () => {
             <div className="chat-card">
               <div className="chat-header">
                 <h3>Чат по заказу</h3>
-                <span className="chat-status offline">оффлайн</span>
               </div>
               <div className="chat-messages">
                 <div className="chat-empty">
-                  <p>Чат будет доступен позже</p>
-                </div>
-              </div>
-              <div className="chat-input">
-                <textarea
-                  className="chat-textarea"
-                  rows="3"
-                  placeholder="Введите сообщение..."
-                />
-                <div className="chat-actions">
-                  <button type="button" className="btn-attach">
-                    Прикрепить файл
-                  </button>
-                  <button type="button" className="btn btn-primary btn-send">
-                    Отправить
-                  </button>
+                  <p>Чат доступен на странице сообщений</p>
                 </div>
               </div>
             </div>

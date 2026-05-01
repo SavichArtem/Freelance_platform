@@ -8,6 +8,8 @@ import ordersReducer from './slices/ordersSlice';
 import messagesReducer from './slices/messagesSlice';
 import notificationsReducer from './slices/notificationsSlice';
 import adminReducer from './slices/adminSlice';
+import themeReducer from './slices/themeSlice';
+
 
 export const store = configureStore({
   reducer: {
@@ -19,6 +21,7 @@ export const store = configureStore({
     orders: ordersReducer,
     messages: messagesReducer,
     notifications: notificationsReducer,
+    theme: themeReducer,
     admin: adminReducer,
   },
 });

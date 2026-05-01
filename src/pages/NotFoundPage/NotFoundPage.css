@@ -5,30 +5,31 @@
   justify-content: center;
   text-align: center;
   padding: 40px 20px;
+  background-color: var(--bg-primary);
 }
 
 .error-code {
   font-size: 120px;
   font-weight: bold;
-  color: #0d6efd;
+  color: var(--blue);
   margin-bottom: 20px;
 }
 
 .error-title {
   font-size: 32px;
   margin-bottom: 16px;
-  color: #212529;
+  color: var(--text-primary);
 }
 
 .error-text {
   font-size: 18px;
-  color: #6c757d;
+  color: var(--text-secondary);
   margin-bottom: 32px;
 }
 
 .home-button {
   display: inline-block;
-  background-color: #0d6efd;
+  background-color: var(--blue);
   color: white;
   text-decoration: none;
   padding: 12px 24px;
@@ -38,6 +39,6 @@
 }
 
 .home-button:hover {
-  background-color: #0b5ed7;
+  background-color: var(--blue-hover);
   color: white;
 }

@@ -9,20 +9,21 @@
   gap: 8px;
   cursor: pointer;
   padding: 10px 16px;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--input-border);
   border-radius: 6px;
   transition: all 0.2s;
   flex: 1;
+  color: var(--text-primary);
 }
 
 .role-option:hover {
-  border-color: #0d6efd;
-  background-color: #f8f9ff;
+  border-color: var(--blue);
+  background-color: var(--hover-bg);
 }
 
 .role-option-active {
-  border-color: #0d6efd;
-  background-color: #f0f7ff;
+  border-color: var(--blue);
+  background-color: rgba(13, 110, 253, 0.1);
 }
 
 .role-option input[type="radio"] {
@@ -30,22 +31,22 @@
 }
 
 .role-option-active span {
-  color: #0d6efd;
+  color: var(--blue);
   font-weight: 500;
 }
 
 .form-input-error {
-  border-color: #dc3545;
+  border-color: var(--danger);
 }
 
 .form-input-error:focus {
-  border-color: #dc3545;
+  border-color: var(--danger);
   box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
 }
 
 .form-error {
   display: block;
-  color: #dc3545;
+  color: var(--danger);
   font-size: 12px;
   margin-top: 4px;
 }

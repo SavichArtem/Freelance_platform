@@ -1,5 +1,6 @@
 .category-page {
   padding: 24px 0 40px;
+  background-color: var(--bg-primary);
 }
 
 .category-header {
@@ -11,23 +12,24 @@
 
 .btn-back {
   background: none;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--input-border);
   padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
-  color: #495057;
+  color: var(--text-secondary);
   transition: all 0.2s;
+  font-family: inherit;
 }
 
 .btn-back:hover {
-  background: #f8f9fa;
-  border-color: #adb5bd;
+  background: var(--hover-bg);
+  border-color: var(--text-muted);
 }
 
 .category-title {
   font-size: 28px;
-  color: #212529;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -37,36 +39,35 @@
   align-items: center;
   margin-bottom: 24px;
   padding: 12px 0;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .sort-control {
   display: flex;
   align-items: center;
   gap: 8px;
+  color: var(--text-secondary);
 }
 
 .sort-control label {
   font-size: 14px;
-  color: #495057;
 }
 
 .sort-select {
   padding: 8px 12px;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--input-border);
   border-radius: 6px;
   font-size: 14px;
-  color: #212529;
-  background: white;
+  color: var(--text-primary);
+  background: var(--input-bg);
   cursor: pointer;
 }
 
 .sort-select:focus {
   outline: none;
-  border-color: #0d6efd;
+  border-color: var(--blue);
 }
 
-/* Freelancers Grid */
 .freelancers-grid {
   display: grid;
   gap: 16px;
@@ -76,15 +77,15 @@
   display: flex;
   gap: 16px;
   padding: 20px;
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
   border-radius: 12px;
   text-decoration: none;
   transition: all 0.2s;
 }
 
 .freelancer-card:hover {
-  border-color: #0d6efd;
+  border-color: var(--blue);
   box-shadow: 0 4px 12px rgba(13, 110, 253, 0.1);
 }
 
@@ -105,7 +106,7 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: #0d6efd;
+  background: var(--blue);
   color: white;
   display: flex;
   align-items: center;
@@ -120,7 +121,7 @@
 }
 
 .freelancer-name {
-  color: #212529;
+  color: var(--text-primary);
   font-size: 18px;
   margin-bottom: 8px;
 }
@@ -142,33 +143,33 @@
 }
 
 .star-full {
-  color: #ffc107;
+  color: var(--star-color);
 }
 
 .star-half {
-  color: #ffc107;
+  color: var(--star-color);
   opacity: 0.5;
 }
 
 .star-empty {
-  color: #dee2e6;
+  color: var(--star-empty);
 }
 
 .rating-value {
   font-size: 14px;
-  color: #6c757d;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .freelancer-bio {
-  color: #6c757d;
+  color: var(--text-secondary);
   font-size: 14px;
   margin-bottom: 8px;
   line-height: 1.4;
 }
 
 .freelancer-price {
-  color: #0d6efd;
+  color: var(--blue);
   font-weight: 600;
   font-size: 16px;
 }
@@ -179,11 +180,9 @@
     align-items: center;
     text-align: center;
   }
-  
   .freelancer-rating {
     justify-content: center;
   }
-  
   .category-header {
     flex-direction: column;
     gap: 12px;

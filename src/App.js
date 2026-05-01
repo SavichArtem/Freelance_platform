@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchCurrentUser } from './store/slices/authSlice';
+import { initTheme } from './store/slices/themeSlice';
 import Header from './components/Header/Header';
 import Footer from './components/Footer/Footer';
 import PrivateRoute from './components/PrivateRoute/PrivateRoute';
@@ -24,6 +25,10 @@ function AppContent() {
   const dispatch = useDispatch();
   const { token } = useSelector(state => state.auth);
   const location = useLocation();
+
+  useEffect(() => {
+    dispatch(initTheme());
+  }, [dispatch]);
 
   useEffect(() => {
     if (token) {
