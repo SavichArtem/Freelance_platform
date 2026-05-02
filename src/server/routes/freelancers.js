@@ -81,10 +81,10 @@ router.get('/:id', async (req, res, next) => {
       include: [{
         model: Order,
         where: { freelancerId: freelancer.id },
-        include: [{
-          model: User,
-          attributes: ['login'],
-        }],
+        include: [
+          { model: User, attributes: ['login'] },
+          { model: Service, attributes: ['name'] },
+        ],
       }],
       where: { status: 'active' },
     });
@@ -104,6 +104,8 @@ router.get('/:id', async (req, res, next) => {
         rating: r.rating,
         text: r.text,
         author: r.Order.User.login,
+        orderNumber: `ORD-${String(r.Order.id).padStart(6, '0')}`,
+        serviceName: r.Order.Service?.name || 'Услуга удалена',
         createdAt: r.createdAt,
       })),
     });

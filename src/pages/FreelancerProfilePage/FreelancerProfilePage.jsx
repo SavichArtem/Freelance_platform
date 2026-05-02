@@ -54,15 +54,13 @@ const FreelancerProfilePage = () => {
       navigate('/login');
       return;
     }
-
     setOrdering(service.id);
     try {
-      await ordersApi.create({
+      const response = await ordersApi.create({
         serviceId: service.id,
         freelancerId: profile.id,
       });
-      alert('Заказ успешно создан! Перейдите в "Мои заказы".');
-      navigate('/orders');
+      navigate(`/orders/${response.data.id}`);
     } catch (error) {
       alert(error.response?.data?.message || 'Ошибка при создании заказа');
     } finally {
@@ -98,18 +96,14 @@ const FreelancerProfilePage = () => {
   return (
     <div className="freelancer-profile-page">
       <div className="container">
-        <button onClick={() => navigate(-1)} className="btn-back">
-          ← Назад
-        </button>
+        <button onClick={() => navigate(-1)} className="btn-back">← Назад</button>
 
         <div className="profile-header">
           <div className="profile-avatar">
             {profile.avatar ? (
               <img src={profile.avatar} alt={profile.login} />
             ) : (
-              <div className="avatar-placeholder">
-                {profile.login?.charAt(0).toUpperCase()}
-              </div>
+              <div className="avatar-placeholder">{profile.login?.charAt(0).toUpperCase()}</div>
             )}
           </div>
           <div className="profile-main-info">
@@ -118,14 +112,10 @@ const FreelancerProfilePage = () => {
               <span className="stars">{renderStars(profile.rating || 0)}</span>
               <span className="rating-value">{Number(profile.rating || 0).toFixed(1)} / 5</span>
             </div>
-            {profile.description && (
-              <p className="profile-description">{profile.description}</p>
-            )}
+            {profile.description && <p className="profile-description">{profile.description}</p>}
           </div>
           {isAuthenticated && user?.id !== (profile?.userId || profile?.id) && (
-            <button onClick={handleMessageClick} className="btn btn-primary btn-message">
-              Написать сообщение
-            </button>
+            <button onClick={handleMessageClick} className="btn btn-primary btn-message">Написать сообщение</button>
           )}
         </div>
 
@@ -161,11 +151,7 @@ const FreelancerProfilePage = () => {
               {profile.portfolioItems.map(item => (
                 <div key={item.id} className="portfolio-card">
                   <div className="portfolio-image">
-                    {item.image ? (
-                      <img src={item.image} alt={item.title} />
-                    ) : (
-                      <div className="portfolio-placeholder">📁</div>
-                    )}
+                    {item.image ? <img src={item.image} alt={item.title} /> : <div className="portfolio-placeholder">📁</div>}
                   </div>
                   <h3 className="portfolio-title">{item.title}</h3>
                   <p className="portfolio-description">{item.description}</p>
@@ -183,19 +169,18 @@ const FreelancerProfilePage = () => {
                 <div key={review.id} className="review-card">
                   <div className="review-header">
                     <div className="review-author">{review.author}</div>
-                    <div className="review-rating">
-                      {renderStars(review.rating)}
-                    </div>
+                    <div className="review-rating">{renderStars(review.rating)}</div>
                     <div className="review-date">{formatDate(review.createdAt)}</div>
+                  </div>
+                  <div className="review-order-info">
+                    Заказ {review.orderNumber} — {review.serviceName}
                   </div>
                   <p className="review-text">{review.text}</p>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="empty-state">
-              <p>Отзывы отсутствуют</p>
-            </div>
+            <div className="empty-state"><p>Отзывы отсутствуют</p></div>
           )}
         </section>
       </div>
