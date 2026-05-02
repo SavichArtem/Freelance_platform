@@ -25,7 +25,7 @@ const Portfolio = sequelize.define('Portfolio', {
     allowNull: true,
   },
   image: {
-    type: DataTypes.STRING(255),
+    type: DataTypes.TEXT,
     allowNull: false,
   },
   createdAt: {
