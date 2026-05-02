@@ -73,25 +73,55 @@ const messagesSlice = createSlice({
   },
   reducers: {
     clearMessages: (state) => {
+      state.chats = [];
       state.currentMessages = [];
       state.currentChatId = null;
       state.currentPartner = null;
+      state.loading = false;
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
     builder
+      .addCase(fetchChats.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(fetchChats.fulfilled, (state, action) => {
+        state.loading = false;
         state.chats = action.payload;
       })
+      .addCase(fetchChats.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(fetchUserMessages.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(fetchUserMessages.fulfilled, (state, action) => {
+        state.loading = false;
         state.currentMessages = action.payload.messages;
         state.currentChatId = action.payload.chatId;
         state.currentPartner = action.payload.partner;
       })
+      .addCase(fetchUserMessages.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      .addCase(fetchOrderMessages.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(fetchOrderMessages.fulfilled, (state, action) => {
+        state.loading = false;
         state.currentMessages = action.payload.messages;
         state.currentChatId = action.payload.chatId;
         state.currentPartner = action.payload.partner;
+      })
+      .addCase(fetchOrderMessages.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       })
       .addCase(sendUserMessage.fulfilled, (state, action) => {
         state.currentMessages.push(action.payload);

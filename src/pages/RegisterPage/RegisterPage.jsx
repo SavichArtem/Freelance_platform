@@ -21,7 +21,7 @@ const RegisterPage = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      navigate('/', { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
@@ -83,6 +83,7 @@ const RegisterPage = () => {
     
     if (validateForm()) {
       const { confirmPassword, ...registerData } = formData;
+      localStorage.removeItem('token');
       dispatch(registerUser(registerData));
     }
   };

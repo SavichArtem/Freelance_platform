@@ -17,7 +17,7 @@ const LoginPage = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      navigate('/', { replace: true });
     }
   }, [isAuthenticated, navigate]);
 
@@ -44,6 +44,7 @@ const LoginPage = () => {
       return;
     }
 
+    localStorage.removeItem('token');
     dispatch(loginUser(formData));
   };
 
