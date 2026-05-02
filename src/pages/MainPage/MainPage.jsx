@@ -7,6 +7,7 @@ import './MainPage.css';
 const MainPage = () => {
   const dispatch = useDispatch();
   const { items: categories, loading, error } = useSelector(state => state.categories);
+  const { isAuthenticated } = useSelector(state => state.auth);
 
   useEffect(() => {
     dispatch(fetchCategories());
@@ -15,20 +16,22 @@ const MainPage = () => {
   return (
     <div className="main-page">
       <div className="container">
-        <section className="hero-section">
-          <h1 className="hero-title">Добро пожаловать на Фриланс Платформу</h1>
-          <p className="hero-subtitle">
-            Найдите идеального исполнителя для вашего проекта или начните зарабатывать на своих навыках
-          </p>
-          <div className="hero-actions">
-            <Link to="/register" className="btn btn-primary btn-lg">
-              Присоединиться
-            </Link>
-            <Link to="/services" className="btn btn-outline btn-lg">
-              Смотреть услуги
-            </Link>
-          </div>
-        </section>
+        {!isAuthenticated && (
+          <section className="hero-section">
+            <h1 className="hero-title">Добро пожаловать на Фриланс Платформу</h1>
+            <p className="hero-subtitle">
+              Найдите идеального исполнителя для вашего проекта или начните зарабатывать на своих навыках
+            </p>
+            <div className="hero-actions">
+              <Link to="/register" className="btn btn-primary btn-lg">
+                Присоединиться
+              </Link>
+              <Link to="/services" className="btn btn-outline btn-lg">
+                Смотреть услуги
+              </Link>
+            </div>
+          </section>
+        )}
 
         <section className="categories-section">
           <h2 className="section-title">Категории услуг</h2>
@@ -78,31 +81,33 @@ const MainPage = () => {
           )}
         </section>
 
-        <section className="how-it-works">
-          <h2 className="section-title">Как это работает</h2>
-          <div className="steps-grid">
-            <div className="step-card">
-              <div className="step-number">1</div>
-              <h3>Создайте заказ</h3>
-              <p>Опишите задачу и выберите категорию</p>
+        {!isAuthenticated && (
+          <section className="how-it-works">
+            <h2 className="section-title">Как это работает</h2>
+            <div className="steps-grid">
+              <div className="step-card">
+                <div className="step-number">1</div>
+                <h3>Создайте заказ</h3>
+                <p>Опишите задачу и выберите категорию</p>
+              </div>
+              <div className="step-card">
+                <div className="step-number">2</div>
+                <h3>Найдите исполнителя</h3>
+                <p>Выберите фрилансера по рейтингу и отзывам</p>
+              </div>
+              <div className="step-card">
+                <div className="step-number">3</div>
+                <h3>Безопасная оплата</h3>
+                <p>Средства замораживаются до выполнения заказа</p>
+              </div>
+              <div className="step-card">
+                <div className="step-number">4</div>
+                <h3>Получите результат</h3>
+                <p>Примите работу и оставьте отзыв</p>
+              </div>
             </div>
-            <div className="step-card">
-              <div className="step-number">2</div>
-              <h3>Найдите исполнителя</h3>
-              <p>Выберите фрилансера по рейтингу и отзывам</p>
-            </div>
-            <div className="step-card">
-              <div className="step-number">3</div>
-              <h3>Безопасная оплата</h3>
-              <p>Средства замораживаются до выполнения заказа</p>
-            </div>
-            <div className="step-card">
-              <div className="step-number">4</div>
-              <h3>Получите результат</h3>
-              <p>Примите работу и оставьте отзыв</p>
-            </div>
-          </div>
-        </section>
+          </section>
+        )}
       </div>
     </div>
   );
