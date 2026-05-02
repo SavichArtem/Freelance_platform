@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchOrderById, completeOrder, returnMoney, openDispute, clearMessage } from '../../store/slices/ordersSlice';
 import { reviewsApi } from '../../api/reviewsApi';
+import { messagesApi } from '../../api/messagesApi';
+import Chat from '../../components/Chat/Chat';
 import './OrderDetailPage.css';
 
 const STATUS_MAP = {
@@ -38,20 +40,20 @@ const OrderDetailPage = () => {
   const [disputeError, setDisputeError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Состояния для отзыва
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [reviewError, setReviewError] = useState('');
   const [submittingReview, setSubmittingReview] = useState(false);
 
+  const [orderMessages, setOrderMessages] = useState([]);
+
   useEffect(() => {
     if (orderId) {
       dispatch(fetchOrderById(orderId));
+      loadMessages();
     }
-    return () => {
-      dispatch(clearMessage());
-    };
+    return () => dispatch(clearMessage());
   }, [orderId, dispatch]);
 
   useEffect(() => {
@@ -64,31 +66,49 @@ const OrderDetailPage = () => {
   }, [message, dispatch, orderId]);
 
   useEffect(() => {
-    if (order?.status === 'completed' && isCustomer) {
+    if (order && user && order.status === 'completed' && user.role === 'customer') {
       reviewsApi.checkOrder(order.id)
-        .then(res => {
-          if (res.data.alreadyReviewed) setReviewSubmitted(true);
-        })
+        .then(res => setReviewSubmitted(res.data.alreadyReviewed))
         .catch(() => {});
     }
-  }, [order, isCustomer]);
+  }, [order, user]);
+
+  useEffect(() => {
+    const interval = setInterval(() => loadMessages(), 3000);
+    const handleFocus = () => loadMessages();
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [orderId]);
+
+  const loadMessages = async () => {
+    try {
+      const res = await messagesApi.getOrderMessages(orderId);
+      setOrderMessages(res.data.messages);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleSendChatMessage = async (data) => {
+    try {
+      await messagesApi.sendToOrder(orderId, data);
+      loadMessages();
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return '—';
     const date = new Date(dateString);
-    return date.toLocaleDateString('ru-RU', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    return date.toLocaleDateString('ru-RU', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
 
   const handleConfirmComplete = () => {
-    if (window.confirm('Вы уверены, что хотите подтвердить выполнение заказа?')) {
-      dispatch(completeOrder(order.id));
-    }
+    if (window.confirm('Подтвердить выполнение заказа?')) dispatch(completeOrder(order.id));
   };
 
   const handleOpenDispute = () => {
@@ -106,16 +126,8 @@ const OrderDetailPage = () => {
   const handleDisputeSubmit = (e) => {
     e.preventDefault();
     setDisputeError('');
-
-    if (!disputeData.reason) {
-      setDisputeError('Выберите причину спора');
-      return;
-    }
-    if (!disputeData.comment.trim()) {
-      setDisputeError('Опишите суть претензии');
-      return;
-    }
-
+    if (!disputeData.reason) { setDisputeError('Выберите причину спора'); return; }
+    if (!disputeData.comment.trim()) { setDisputeError('Опишите суть претензии'); return; }
     dispatch(openDispute({ orderId: order.id, data: disputeData }))
       .unwrap()
       .then(() => setShowDisputeForm(false))
@@ -123,30 +135,20 @@ const OrderDetailPage = () => {
   };
 
   const handleReturnMoney = () => {
-    if (window.confirm('Вы уверены, что хотите вернуть деньги заказчику?')) {
-      dispatch(returnMoney(order.id));
-    }
+    if (window.confirm('Вернуть деньги заказчику?')) dispatch(returnMoney(order.id));
   };
 
   const handleSubmitReview = async () => {
-    if (!reviewText.trim()) {
-      setReviewError('Напишите текст отзыва');
-      return;
-    }
+    if (!reviewText.trim()) { setReviewError('Напишите текст отзыва'); return; }
     setSubmittingReview(true);
     setReviewError('');
-
     try {
-      await reviewsApi.create({
-        orderId: order.id,
-        rating: reviewRating,
-        text: reviewText,
-      });
+      await reviewsApi.create({ orderId: order.id, rating: reviewRating, text: reviewText });
       setReviewSubmitted(true);
       setSuccessMessage('Отзыв успешно отправлен');
       setTimeout(() => setSuccessMessage(''), 5000);
     } catch (error) {
-      setReviewError(error.response?.data?.message || 'Ошибка при отправке отзыва');
+      setReviewError(error.response?.data?.message || 'Ошибка');
     } finally {
       setSubmittingReview(false);
     }
@@ -156,10 +158,7 @@ const OrderDetailPage = () => {
     return (
       <div className="order-detail-page">
         <div className="container">
-          <div className="loading-container">
-            <div className="spinner"></div>
-            <p>Загрузка заказа...</p>
-          </div>
+          <div className="loading-container"><div className="spinner"></div><p>Загрузка...</p></div>
         </div>
       </div>
     );
@@ -176,59 +175,41 @@ const OrderDetailPage = () => {
     );
   }
 
-  if (!order) return null;
+  if (!order || !user) return null;
 
-  const isCustomer = user?.role === 'customer';
-  const isFreelancer = user?.role === 'freelancer';
+  const isCustomer = user.role === 'customer';
+  const isFreelancer = user.role === 'freelancer';
+  const canReview = order.status === 'completed' && isCustomer && !reviewSubmitted;
+  const partnerName = isCustomer ? order.freelancerName : order.customerName;
+  const partnerUserId = isCustomer ? order.freelancerUserId : order.customerUserId;
+
+  const chatHeaderExtra = (
+    <div className="chat-header-actions">
+      <Link to={`/messages/user/${partnerUserId}`} className="btn-order-link">Открыть в сообщениях</Link>
+    </div>
+  );
 
   return (
     <div className="order-detail-page">
       <div className="container">
         <button onClick={() => navigate(-1)} className="btn-back">← Назад к заказам</button>
 
-        {successMessage && (
-          <div className="message-alert message-success">{successMessage}</div>
-        )}
+        {successMessage && <div className="message-alert message-success">{successMessage}</div>}
 
         <div className="order-detail-layout">
           <div className="order-info-section">
             <div className="order-card">
               <div className="order-card-header">
                 <h1 className="order-number">{order.orderNumber}</h1>
-                <span className={`status-badge ${STATUS_CLASS[order.status]}`}>
-                  {STATUS_MAP[order.status] || order.status}
-                </span>
+                <span className={`status-badge ${STATUS_CLASS[order.status]}`}>{STATUS_MAP[order.status] || order.status}</span>
               </div>
 
               <div className="order-details">
-                <div className="detail-row">
-                  <span className="detail-label">Услуга:</span>
-                  <span className="detail-value">{order.serviceName}</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Бюджет:</span>
-                  <span className="detail-value detail-price">{Number(order.budget).toLocaleString()} ₽</span>
-                </div>
-                <div className="detail-row">
-                  <span className="detail-label">Дата создания:</span>
-                  <span className="detail-value">{formatDate(order.createdAt)}</span>
-                </div>
-                {order.completedAt && (
-                  <div className="detail-row">
-                    <span className="detail-label">Дата завершения:</span>
-                    <span className="detail-value">{formatDate(order.completedAt)}</span>
-                  </div>
-                )}
-                <div className="detail-row">
-                  <span className="detail-label">{isCustomer ? 'Фрилансер:' : 'Заказчик:'}</span>
-                  <span className="detail-value">{isCustomer ? order.freelancerName : order.customerName}</span>
-                </div>
-                {order.description && (
-                  <div className="detail-row detail-description">
-                    <span className="detail-label">Описание:</span>
-                    <span className="detail-value">{order.description}</span>
-                  </div>
-                )}
+                <div className="detail-row"><span className="detail-label">Услуга:</span><span className="detail-value">{order.serviceName}</span></div>
+                <div className="detail-row"><span className="detail-label">Бюджет:</span><span className="detail-value detail-price">{Number(order.budget).toLocaleString()} ₽</span></div>
+                <div className="detail-row"><span className="detail-label">Дата создания:</span><span className="detail-value">{formatDate(order.createdAt)}</span></div>
+                {order.completedAt && <div className="detail-row"><span className="detail-label">Дата завершения:</span><span className="detail-value">{formatDate(order.completedAt)}</span></div>}
+                <div className="detail-row"><span className="detail-label">{isCustomer ? 'Фрилансер:' : 'Заказчик:'}</span><span className="detail-value">{isCustomer ? order.freelancerName : order.customerName}</span></div>
               </div>
 
               {order.status === 'in_progress' && (
@@ -239,9 +220,7 @@ const OrderDetailPage = () => {
                       <button onClick={handleOpenDispute} className="btn btn-danger">Открыть спор</button>
                     </>
                   )}
-                  {isFreelancer && (
-                    <button onClick={handleReturnMoney} className="btn btn-warning">Вернуть деньги заказчику</button>
-                  )}
+                  {isFreelancer && <button onClick={handleReturnMoney} className="btn btn-warning">Вернуть деньги заказчику</button>}
                 </div>
               )}
 
@@ -251,54 +230,24 @@ const OrderDetailPage = () => {
                   <p><strong>Причина:</strong> {order.dispute.reason}</p>
                   <p><strong>Комментарий:</strong> {order.dispute.comment}</p>
                   <p><strong>Статус:</strong> {order.dispute.status === 'open' ? 'Открыт' : 'Решен'}</p>
-                  {order.dispute.resolution && (
-                    <p><strong>Решение:</strong> {order.dispute.resolution === 'customer' ? 'В пользу заказчика' : 'В пользу фрилансера'}</p>
-                  )}
-                  {order.dispute.adminComment && (
-                    <p><strong>Комментарий администратора:</strong> {order.dispute.adminComment}</p>
-                  )}
+                  {order.dispute.resolution && <p><strong>Решение:</strong> {order.dispute.resolution === 'customer' ? 'В пользу заказчика' : 'В пользу фрилансера'}</p>}
+                  {order.dispute.adminComment && <p><strong>Комментарий администратора:</strong> {order.dispute.adminComment}</p>}
                 </div>
               )}
 
-              {order.status === 'completed' && isCustomer && !reviewSubmitted && (
+              {canReview && (
                 <div className="review-section">
                   <h3>Оставить отзыв</h3>
                   {reviewError && <div className="form-error-message">{reviewError}</div>}
                   <div className="stars-input">
-                    {[1, 2, 3, 4, 5].map(star => (
-                      <span
-                        key={star}
-                        className={`star-input ${star <= reviewRating ? 'star-active' : ''}`}
-                        onClick={() => setReviewRating(star)}
-                      >
-                        ★
-                      </span>
-                    ))}
+                    {[1,2,3,4,5].map(star => <span key={star} className={`star-input ${star <= reviewRating ? 'star-active' : ''}`} onClick={() => setReviewRating(star)}>★</span>)}
                   </div>
-                  <textarea
-                    value={reviewText}
-                    onChange={(e) => setReviewText(e.target.value)}
-                    className="form-input form-textarea"
-                    rows="3"
-                    placeholder="Напишите отзыв о работе фрилансера..."
-                    maxLength={1000}
-                  />
+                  <textarea value={reviewText} onChange={e => setReviewText(e.target.value)} className="form-input form-textarea" rows="3" placeholder="Напишите отзыв..." maxLength={1000} />
                   <div className="review-char-count">{reviewText.length}/1000</div>
-                  <button
-                    onClick={handleSubmitReview}
-                    className="btn btn-primary"
-                    disabled={submittingReview}
-                  >
-                    {submittingReview ? 'Отправка...' : 'Отправить отзыв'}
-                  </button>
+                  <button onClick={handleSubmitReview} className="btn btn-primary" disabled={submittingReview}>{submittingReview ? 'Отправка...' : 'Отправить'}</button>
                 </div>
               )}
-
-              {reviewSubmitted && (
-                <div className="review-submitted">
-                  <p>Вы уже оставили отзыв на этот заказ</p>
-                </div>
-              )}
+              {reviewSubmitted && <div className="review-submitted"><p>Вы уже оставили отзыв</p></div>}
             </div>
 
             {showDisputeForm && (
@@ -310,21 +259,12 @@ const OrderDetailPage = () => {
                     <label className="form-label">Причина спора</label>
                     <select name="reason" value={disputeData.reason} onChange={handleDisputeChange} className="form-input">
                       <option value="">Выберите причину</option>
-                      {DISPUTE_REASONS.map(reason => (
-                        <option key={reason} value={reason}>{reason}</option>
-                      ))}
+                      {DISPUTE_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
                     </select>
                   </div>
                   <div className="form-group">
                     <label className="form-label">Комментарий</label>
-                    <textarea
-                      name="comment"
-                      value={disputeData.comment}
-                      onChange={handleDisputeChange}
-                      className="form-input form-textarea"
-                      rows="4"
-                      placeholder="Опишите суть претензии..."
-                    />
+                    <textarea name="comment" value={disputeData.comment} onChange={handleDisputeChange} className="form-input form-textarea" rows="4" placeholder="Опишите суть претензии..." />
                   </div>
                   <div className="form-actions">
                     <button type="submit" className="btn btn-danger">Отправить</button>
@@ -336,16 +276,12 @@ const OrderDetailPage = () => {
           </div>
 
           <div className="order-chat-section">
-            <div className="chat-card">
-              <div className="chat-header">
-                <h3>Чат по заказу</h3>
-              </div>
-              <div className="chat-messages">
-                <div className="chat-empty">
-                  <p>Чат доступен на странице сообщений</p>
-                </div>
-              </div>
-            </div>
+            <Chat
+              messages={orderMessages}
+              partnerName={partnerName}
+              onSendMessage={handleSendChatMessage}
+              headerExtra={chatHeaderExtra}
+            />
           </div>
         </div>
       </div>

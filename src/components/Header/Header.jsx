@@ -50,11 +50,18 @@ const Header = () => {
       case 'new_message':
         navigate('/messages');
         break;
+      case 'new_order':
       case 'order_completed':
       case 'order_returned':
+        navigate('/orders');
+        break;
       case 'dispute_opened':
       case 'dispute_resolved':
-        navigate('/orders');
+        if (user?.role === 'admin') {
+          navigate('/admin?tab=disputes');
+        } else {
+          navigate('/orders');
+        }
         break;
       default:
         break;
@@ -124,14 +131,10 @@ const Header = () => {
                         <span>Уведомления</span>
                         <div className="notif-header-actions">
                           {unreadCount > 0 && (
-                            <button onClick={() => dispatch(markAllAsRead())} className="notif-read-all">
-                              Прочитать все
-                            </button>
+                            <button onClick={() => dispatch(markAllAsRead())} className="notif-read-all">Прочитать все</button>
                           )}
                           {notifications.length > 0 && (
-                            <button onClick={handleClearAll} className="notif-clear-all">
-                              Очистить
-                            </button>
+                            <button onClick={handleClearAll} className="notif-clear-all">Очистить</button>
                           )}
                         </div>
                       </div>

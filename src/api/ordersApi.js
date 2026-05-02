@@ -6,4 +6,5 @@ export const ordersApi = {
   complete: (id) => axiosInstance.put(`/orders/${id}/complete`),
   returnMoney: (id) => axiosInstance.put(`/orders/${id}/return`),
   openDispute: (id, data) => axiosInstance.put(`/orders/${id}/dispute`, data),
+  create: (data) => axiosInstance.post('/orders', data),
 };

@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchFreelancerById } from '../../store/slices/freelancerSlice';
+import { ordersApi } from '../../api/ordersApi';
 import './FreelancerProfilePage.css';
 
 const FreelancerProfilePage = () => {
@@ -10,6 +11,7 @@ const FreelancerProfilePage = () => {
   const dispatch = useDispatch();
   const { profile, loading, error } = useSelector(state => state.freelancer);
   const { user, isAuthenticated } = useSelector(state => state.auth);
+  const [ordering, setOrdering] = useState(null);
 
   useEffect(() => {
     if (freelancerId) {
@@ -45,6 +47,27 @@ const FreelancerProfilePage = () => {
     }
     const partnerId = profile?.userId || profile?.id;
     navigate(`/messages/user/${partnerId}`);
+  };
+
+  const handleOrderService = async (service) => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
+    setOrdering(service.id);
+    try {
+      await ordersApi.create({
+        serviceId: service.id,
+        freelancerId: profile.id,
+      });
+      alert('Заказ успешно создан! Перейдите в "Мои заказы".');
+      navigate('/orders');
+    } catch (error) {
+      alert(error.response?.data?.message || 'Ошибка при создании заказа');
+    } finally {
+      setOrdering(null);
+    }
   };
 
   if (loading) {
@@ -93,7 +116,7 @@ const FreelancerProfilePage = () => {
             <h1 className="profile-name">{profile.login}</h1>
             <div className="profile-rating">
               <span className="stars">{renderStars(profile.rating || 0)}</span>
-              <span className="rating-value">{profile.rating || 0} / 5</span>
+              <span className="rating-value">{Number(profile.rating || 0).toFixed(1)} / 5</span>
             </div>
             {profile.description && (
               <p className="profile-description">{profile.description}</p>
@@ -115,6 +138,16 @@ const FreelancerProfilePage = () => {
                   <h3 className="service-name">{service.name}</h3>
                   <p className="service-description">{service.description}</p>
                   <div className="service-price">{Number(service.price).toLocaleString()} ₽</div>
+                  {isAuthenticated && user?.id !== (profile?.userId || profile?.id) && (
+                    <button
+                      onClick={() => handleOrderService(service)}
+                      className="btn btn-primary"
+                      disabled={ordering === service.id}
+                      style={{ marginTop: '12px', width: '100%' }}
+                    >
+                      {ordering === service.id ? 'Создание заказа...' : 'Заказать'}
+                    </button>
+                  )}
                 </div>
               ))}
             </div>

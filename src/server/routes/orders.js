@@ -6,13 +6,11 @@ const { createNotification } = require('./notifications');
 
 const router = express.Router();
 
-// GET /api/orders
 router.get('/', protect, async (req, res, next) => {
   try {
     const { status, search } = req.query;
     const userId = req.user.id;
     const userRole = req.user.role;
-
     const whereClause = {};
 
     if (userRole === 'customer') {
@@ -26,18 +24,13 @@ router.get('/', protect, async (req, res, next) => {
       }
     }
 
-    if (status && status !== 'all') {
-      whereClause.status = status;
-    }
+    if (status && status !== 'all') whereClause.status = status;
 
     const orders = await Order.findAll({
       where: whereClause,
       include: [
         { model: User, attributes: ['id', 'login'] },
-        {
-          model: Freelancer,
-          include: [{ model: User, attributes: ['id', 'login'] }],
-        },
+        { model: Freelancer, include: [{ model: User, attributes: ['id', 'login'] }] },
         { model: Service, attributes: ['id', 'name', 'price'] },
       ],
       order: [['createdAt', 'DESC']],
@@ -71,24 +64,18 @@ router.get('/', protect, async (req, res, next) => {
   }
 });
 
-// GET /api/orders/:id
 router.get('/:id', protect, async (req, res, next) => {
   try {
     const order = await Order.findByPk(req.params.id, {
       include: [
         { model: User, attributes: ['id', 'login'] },
-        {
-          model: Freelancer,
-          include: [{ model: User, attributes: ['id', 'login'] }],
-        },
+        { model: Freelancer, include: [{ model: User, attributes: ['id', 'login'] }] },
         { model: Service, attributes: ['id', 'name', 'description', 'price'] },
         { model: Dispute },
       ],
     });
 
-    if (!order) {
-      return res.status(404).json({ message: 'Заказ не найден' });
-    }
+    if (!order) return res.status(404).json({ message: 'Заказ не найден' });
 
     const dispute = order.Dispute ? {
       reason: order.Dispute.reason,
@@ -105,8 +92,10 @@ router.get('/:id', protect, async (req, res, next) => {
       orderNumber: `ORD-${String(order.id).padStart(6, '0')}`,
       customerId: order.userId,
       customerName: order.User.login,
+      customerUserId: order.User.id,
       freelancerId: order.freelancerId,
       freelancerName: order.Freelancer?.User?.login || 'Неизвестно',
+      freelancerUserId: order.Freelancer?.User?.id,
       serviceId: order.serviceId,
       serviceName: order.Service?.name || 'Услуга удалена',
       serviceDescription: order.Service?.description || '',
@@ -122,17 +111,41 @@ router.get('/:id', protect, async (req, res, next) => {
   }
 });
 
-// PUT /api/orders/:id/complete
+router.post('/', protect, async (req, res, next) => {
+  try {
+    const { serviceId, freelancerId } = req.body;
+    if (!serviceId || !freelancerId) return res.status(400).json({ message: 'Укажите услугу и фрилансера' });
+
+    const service = await Service.findByPk(serviceId);
+    if (!service) return res.status(404).json({ message: 'Услуга не найдена' });
+
+    const order = await Order.create({
+      userId: req.user.id,
+      freelancerId,
+      serviceId,
+      status: 'in_progress',
+      budget: service.price,
+    });
+
+    const freelancer = await Freelancer.findByPk(freelancerId);
+    if (freelancer) {
+      await createNotification(freelancer.userId, 'new_order', 'Новый заказ', `${req.user.login} заказал услугу "${service.name}".`);
+    }
+
+    res.status(201).json({ id: order.id, orderNumber: `ORD-${String(order.id).padStart(6, '0')}`, message: 'Заказ успешно создан' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.put('/:id/complete', protect, async (req, res, next) => {
   try {
     const order = await Order.findByPk(req.params.id, {
-      include: [
-        { model: Freelancer, include: [{ model: User }] },
-      ],
+      include: [{ model: Freelancer, include: [{ model: User }] }],
     });
 
     if (!order) return res.status(404).json({ message: 'Заказ не найден' });
-    if (order.userId !== req.user.id) return res.status(403).json({ message: 'Только заказчик может подтвердить выполнение' });
+    if (order.userId !== req.user.id) return res.status(403).json({ message: 'Только заказчик может подтвердить' });
     if (order.status !== 'in_progress') return res.status(400).json({ message: 'Заказ уже завершен или в споре' });
 
     order.status = 'completed';
@@ -140,12 +153,7 @@ router.put('/:id/complete', protect, async (req, res, next) => {
     await order.save();
 
     if (order.Freelancer?.User) {
-      await createNotification(
-        order.Freelancer.User.id,
-        'order_completed',
-        'Заказ выполнен',
-        `Заказ ${`ORD-${String(order.id).padStart(6, '0')}`} подтвержден. Средства переведены.`
-      );
+      await createNotification(order.Freelancer.User.id, 'order_completed', 'Заказ выполнен', `Заказ ${`ORD-${String(order.id).padStart(6, '0')}`} подтвержден.`);
     }
 
     res.json({ message: 'Работа принята, деньги переведены фрилансеру', order });
@@ -154,25 +162,19 @@ router.put('/:id/complete', protect, async (req, res, next) => {
   }
 });
 
-// PUT /api/orders/:id/return
 router.put('/:id/return', protect, async (req, res, next) => {
   try {
     const order = await Order.findByPk(req.params.id);
     if (!order) return res.status(404).json({ message: 'Заказ не найден' });
 
     const freelancer = await Freelancer.findOne({ where: { userId: req.user.id } });
-    if (!freelancer || order.freelancerId !== freelancer.id) return res.status(403).json({ message: 'Только фрилансер может вернуть деньги' });
+    if (!freelancer || order.freelancerId !== freelancer.id) return res.status(403).json({ message: 'Только фрилансер может вернуть' });
     if (order.status !== 'in_progress') return res.status(400).json({ message: 'Заказ уже завершен или в споре' });
 
     order.status = 'returned';
     await order.save();
 
-    await createNotification(
-      order.userId,
-      'order_returned',
-      'Возврат средств',
-      `Фрилансер вернул деньги по заказу ${`ORD-${String(order.id).padStart(6, '0')}`}.`
-    );
+    await createNotification(order.userId, 'order_returned', 'Возврат средств', `Фрилансер вернул деньги по заказу ${`ORD-${String(order.id).padStart(6, '0')}`}.`);
 
     res.json({ message: 'Средства возвращены заказчику', order });
   } catch (error) {
@@ -180,14 +182,11 @@ router.put('/:id/return', protect, async (req, res, next) => {
   }
 });
 
-// PUT /api/orders/:id/dispute
 router.put('/:id/dispute', protect, async (req, res, next) => {
   try {
     const { reason, comment } = req.body;
     const order = await Order.findByPk(req.params.id, {
-      include: [
-        { model: Freelancer, include: [{ model: User }] },
-      ],
+      include: [{ model: Freelancer, include: [{ model: User }] }],
     });
 
     if (!order) return res.status(404).json({ message: 'Заказ не найден' });
@@ -201,12 +200,12 @@ router.put('/:id/dispute', protect, async (req, res, next) => {
     await Dispute.create({ orderId: order.id, reason, comment, status: 'open' });
 
     if (order.Freelancer?.User) {
-      await createNotification(
-        order.Freelancer.User.id,
-        'dispute_opened',
-        'Открыт спор',
-        `Заказчик открыл спор по заказу ${`ORD-${String(order.id).padStart(6, '0')}`}.`
-      );
+      await createNotification(order.Freelancer.User.id, 'dispute_opened', 'Открыт спор', `Заказчик открыл спор по заказу ${`ORD-${String(order.id).padStart(6, '0')}`}.`);
+    }
+
+    const admins = await User.findAll({ where: { role: 'admin' } });
+    for (const admin of admins) {
+      await createNotification(admin.id, 'dispute_opened', 'Новый спор', `Открыт спор по заказу ${`ORD-${String(order.id).padStart(6, '0')}`}.`);
     }
 
     res.json({ message: 'Спор открыт, ожидайте решения администратора', order });
