@@ -7,11 +7,16 @@ const router = express.Router();
 // GET /api/freelancers/search
 router.get('/search', async (req, res, next) => {
   try {
-    const { query, sortBy } = req.query;
+    const { query, sortBy, categoryId } = req.query;
 
-    const whereClause = {};
+    const userWhere = {};
     if (query) {
-      whereClause.login = { [Op.iLike]: `%${query}%` };
+      userWhere.login = { [Op.iLike]: `%${query}%` };
+    }
+
+    const serviceWhere = {};
+    if (categoryId) {
+      serviceWhere.categoryId = categoryId;
     }
 
     const freelancers = await Freelancer.findAll({
@@ -19,16 +24,17 @@ router.get('/search', async (req, res, next) => {
         {
           model: User,
           attributes: ['id', 'login', 'avatar'],
-          where: query ? whereClause : undefined,
+          where: query ? userWhere : undefined,
         },
         {
           model: Service,
+          where: categoryId ? serviceWhere : undefined,
         },
       ],
     });
 
     let results = freelancers
-      .filter(f => f.User)
+      .filter(f => f.User && f.Services.length > 0)
       .map(f => ({
         id: f.id,
         userId: f.User.id,
@@ -36,9 +42,7 @@ router.get('/search', async (req, res, next) => {
         avatar: f.User.avatar,
         rating: f.rating,
         description: f.description,
-        minPrice: f.Services.length > 0
-          ? Math.min(...f.Services.map(s => Number(s.price)))
-          : 0,
+        minPrice: Math.min(...f.Services.map(s => Number(s.price))),
       }));
 
     if (sortBy === 'price_asc') {

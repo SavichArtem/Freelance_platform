@@ -1,4 +1,5 @@
 const express = require('express');
+const { Op } = require('sequelize');
 const { Category, Service, Freelancer, User, Review } = require('../models');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -30,20 +31,24 @@ router.get('/:id', async (req, res, next) => {
 // GET /api/categories/:id/freelancers
 router.get('/:id/freelancers', async (req, res, next) => {
   try {
-    const { sortBy } = req.query;
+    const { sortBy, query } = req.query;
     const categoryId = req.params.id;
 
+    // Сначала получаем ВСЕ услуги в категории с фрилансерами
     const services = await Service.findAll({
       where: { categoryId },
-      include: [{
-        model: Freelancer,
-        include: [{
-          model: User,
-          attributes: ['id', 'login', 'avatar'],
-        }],
-      }],
+      include: [
+        {
+          model: Freelancer,
+          include: [{
+            model: User,
+            attributes: ['id', 'login', 'avatar'],
+          }],
+        },
+      ],
     });
 
+    // Группируем по фрилансерам
     let freelancers = [];
 
     services.forEach(service => {
@@ -56,7 +61,7 @@ router.get('/:id/freelancers', async (req, res, next) => {
             avatar: service.Freelancer.User.avatar,
             rating: service.Freelancer.rating,
             description: service.Freelancer.description,
-            minPrice: service.price,
+            minPrice: Number(service.price),
             services: [{
               id: service.id,
               name: service.name,
@@ -71,13 +76,23 @@ router.get('/:id/freelancers', async (req, res, next) => {
             description: service.description,
             price: service.price,
           });
-          if (service.price < existing.minPrice) {
-            existing.minPrice = service.price;
+          if (Number(service.price) < existing.minPrice) {
+            existing.minPrice = Number(service.price);
           }
         }
       }
     });
 
+    // Фильтрация по поисковому запросу (после группировки)
+    if (query) {
+      const q = query.toLowerCase();
+      freelancers = freelancers.filter(f =>
+        f.login.toLowerCase().includes(q) ||
+        (f.description && f.description.toLowerCase().includes(q))
+      );
+    }
+
+    // Сортировка
     if (sortBy === 'price_asc') {
       freelancers.sort((a, b) => a.minPrice - b.minPrice);
     } else if (sortBy === 'price_desc') {
