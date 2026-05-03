@@ -68,6 +68,8 @@ const FreelancerProfilePage = () => {
     }
   };
 
+  const canOrder = isAuthenticated && user?.role !== 'admin' && user?.id !== (profile?.userId || profile?.id);
+
   if (loading) {
     return (
       <div className="freelancer-profile-page">
@@ -114,7 +116,7 @@ const FreelancerProfilePage = () => {
             </div>
             {profile.description && <p className="profile-description">{profile.description}</p>}
           </div>
-          {isAuthenticated && user?.id !== (profile?.userId || profile?.id) && (
+          {canOrder && (
             <button onClick={handleMessageClick} className="btn btn-primary btn-message">Написать сообщение</button>
           )}
         </div>
@@ -128,7 +130,7 @@ const FreelancerProfilePage = () => {
                   <h3 className="service-name">{service.name}</h3>
                   <p className="service-description">{service.description}</p>
                   <div className="service-price">{Number(service.price).toLocaleString()} ₽</div>
-                  {isAuthenticated && user?.id !== (profile?.userId || profile?.id) && (
+                  {canOrder && (
                     <button
                       onClick={() => handleOrderService(service)}
                       className="btn btn-primary"
