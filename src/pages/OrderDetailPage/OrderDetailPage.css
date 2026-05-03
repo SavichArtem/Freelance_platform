@@ -167,7 +167,7 @@
 .order-chat-section {
   position: sticky;
   top: 84px;
-  height: calc(100vh - 140px);
+  height: calc(100vh - 245px);
 }
 
 .order-chat-section .chat-widget {

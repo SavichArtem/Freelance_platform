@@ -17,7 +17,6 @@ const ChatPage = () => {
   const [activeOrderId, setActiveOrderId] = useState(null);
 
   const isOrderChat = !!orderId;
-  const chatId = isOrderChat ? `order_${orderId}` : `user_${userId}`;
 
   useEffect(() => {
     dispatch(fetchChats());
@@ -30,8 +29,24 @@ const ChatPage = () => {
   }, [userId, orderId, dispatch, isOrderChat]);
 
   useEffect(() => {
+    const interval = setInterval(() => {
+      if (isOrderChat) {
+        dispatch(fetchOrderMessages(orderId));
+      } else if (userId) {
+        dispatch(fetchUserMessages(userId));
+      }
+      dispatch(fetchChats());
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [userId, orderId, dispatch, isOrderChat]);
+
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      setActiveOrderId(null);
+      return;
+    }
     loadActiveOrder();
-  }, [currentPartner, userId]);
+  }, [currentPartner, userId, user]);
 
   const loadActiveOrder = async () => {
     const partnerId = currentPartner?.id || Number(userId);
@@ -71,7 +86,7 @@ const ChatPage = () => {
   const headerExtra = (
     <div className="chat-header-actions">
       <button className="mobile-back-btn" onClick={() => setShowSidebar(true)}>←</button>
-      {activeOrderId && (
+      {activeOrderId && user?.role !== 'admin' && (
         <Link to={`/orders/${activeOrderId}`} className="btn-order-link">К заказу</Link>
       )}
     </div>

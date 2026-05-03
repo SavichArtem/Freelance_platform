@@ -4,16 +4,33 @@ import './Chat.css';
 
 const Chat = ({ messages, partnerName, partnerAvatar, onSendMessage, loading, headerExtra, readOnly = false }) => {
   const messagesEndRef = useRef(null);
+  const containerRef = useRef(null);
   const fileInputRef = useRef(null);
   const { user } = useSelector(state => state.auth);
 
   const [newMessage, setNewMessage] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileError, setFileError] = useState('');
+  const [initialScrollDone, setInitialScrollDone] = useState(false);
 
+  // Первый скролл при загрузке
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (!initialScrollDone && messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+      setInitialScrollDone(true);
+    }
+  }, [messages, initialScrollDone]);
+
+  // При получении нового сообщения — скроллим если мы внизу
+  useEffect(() => {
+    if (initialScrollDone && containerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+      if (isNearBottom) {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }, [messages.length, initialScrollDone]);
 
   const formatTime = (dateString) => {
     const date = new Date(dateString);
@@ -63,6 +80,9 @@ const Chat = ({ messages, partnerName, partnerAvatar, onSendMessage, loading, he
     setNewMessage('');
     setSelectedFile(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   const handleKeyDown = (e) => {
@@ -88,7 +108,7 @@ const Chat = ({ messages, partnerName, partnerAvatar, onSendMessage, loading, he
         {headerExtra && <div className="chat-header-actions">{headerExtra}</div>}
       </div>
 
-      <div className="chat-widget-messages">
+      <div className="chat-widget-messages" ref={containerRef}>
         {loading ? (
           <div className="messages-empty">Загрузка...</div>
         ) : messages.length === 0 ? (
@@ -145,13 +165,7 @@ const Chat = ({ messages, partnerName, partnerAvatar, onSendMessage, loading, he
               </svg>
             </button>
             <div className="message-input-field">
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Введите сообщение..."
-              />
+              <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={handleKeyDown} placeholder="Введите сообщение..." />
             </div>
             <button onClick={handleSend} className="btn-send" disabled={!newMessage.trim() && !selectedFile}>
               <svg viewBox="0 0 24 24" width="18" height="18" fill="white">

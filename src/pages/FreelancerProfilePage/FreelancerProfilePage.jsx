@@ -69,6 +69,7 @@ const FreelancerProfilePage = () => {
   };
 
   const canOrder = isAuthenticated && user?.role !== 'admin' && user?.id !== (profile?.userId || profile?.id);
+  const canMessage = isAuthenticated && user?.id !== (profile?.userId || profile?.id);
 
   if (loading) {
     return (
@@ -116,7 +117,7 @@ const FreelancerProfilePage = () => {
             </div>
             {profile.description && <p className="profile-description">{profile.description}</p>}
           </div>
-          {canOrder && (
+          {canMessage && (
             <button onClick={handleMessageClick} className="btn btn-primary btn-message">Написать сообщение</button>
           )}
         </div>

@@ -18,7 +18,7 @@
 
 .search-box {
   flex: 1;
-  min-width: 250px;
+  min-width: 200px;
 }
 
 .filter-box {
@@ -35,7 +35,7 @@
 
 .orders-table-header {
   display: grid;
-  grid-template-columns: 120px 140px 1fr 1fr 140px 120px;
+  grid-template-columns: 100px 130px 1fr 1fr 130px 110px;
   gap: 12px;
   padding: 14px 20px;
   background: var(--bg-secondary);
@@ -47,7 +47,7 @@
 
 .order-row {
   display: grid;
-  grid-template-columns: 120px 140px 1fr 1fr 140px 120px;
+  grid-template-columns: 100px 130px 1fr 1fr 130px 110px;
   gap: 12px;
   padding: 16px 20px;
   border-bottom: 1px solid var(--border-color);
@@ -72,6 +72,8 @@
   border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
 }
 
 .status-progress {
@@ -97,21 +99,69 @@
 .col-price {
   font-weight: 600;
   color: var(--blue);
+  text-align: right;
 }
 
 @media (max-width: 992px) {
   .orders-table-header {
     display: none;
   }
+
   .order-row {
     grid-template-columns: 1fr;
-    gap: 8px;
-    padding: 16px;
+    gap: 6px;
+    padding: 14px 16px;
   }
+
+  .order-row > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
   .order-row > div::before {
     content: attr(data-label);
     font-weight: 600;
     color: var(--text-secondary);
     font-size: 12px;
+    min-width: 100px;
+  }
+
+  .col-price {
+    text-align: left;
+  }
+}
+
+@media (max-width: 480px) {
+  .orders-title {
+    font-size: 22px;
+  }
+
+  .orders-filters {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .search-box {
+    min-width: 100%;
+  }
+
+  .filter-box {
+    width: 100%;
+  }
+
+  .order-row {
+    padding: 12px;
+    gap: 4px;
+  }
+
+  .order-row > div::before {
+    min-width: 80px;
+    font-size: 11px;
+  }
+
+  .order-row > div {
+    font-size: 13px;
   }
 }

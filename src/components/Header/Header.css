@@ -58,6 +58,10 @@
   color: white;
 }
 
+.mobile-profile-link {
+  display: none;
+}
+
 .auth-links {
   display: flex;
   gap: 16px;
@@ -287,10 +291,25 @@
   .nav-menu li a {
     display: block;
     padding: 12px 20px;
+    border-radius: 0;
+  }
+
+  .nav-menu li a.active {
+    background-color: rgba(13, 110, 253, 0.15);
+    color: var(--blue);
   }
 
   .desktop-only {
     display: none;
+  }
+
+  .mobile-profile-link {
+    display: block;
+  }
+
+  .mobile-profile-link a {
+    font-weight: 700;
+    border-bottom: 1px solid var(--border-color);
   }
 
   .notif-dropdown {

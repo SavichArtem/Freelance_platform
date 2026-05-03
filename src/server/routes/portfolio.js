@@ -19,6 +19,14 @@ router.post('/', async (req, res, next) => {
       return res.status(400).json({ message: 'Название и изображение обязательны' });
     }
 
+    if (title.length > 60) {
+      return res.status(400).json({ message: 'Название работы не должно превышать 60 символов' });
+    }
+
+    if (description && description.length > 500) {
+      return res.status(400).json({ message: 'Описание работы не должно превышать 500 символов' });
+    }
+
     const item = await Portfolio.create({
       freelancerId: freelancer.id,
       title,
@@ -43,6 +51,15 @@ router.put('/:id', async (req, res, next) => {
     if (!item) return res.status(404).json({ message: 'Не найдено' });
 
     const { title, description, image } = req.body;
+
+    if (title && title.length > 60) {
+      return res.status(400).json({ message: 'Название работы не должно превышать 60 символов' });
+    }
+
+    if (description && description.length > 500) {
+      return res.status(400).json({ message: 'Описание работы не должно превышать 500 символов' });
+    }
+
     if (title) item.title = title;
     if (description !== undefined) item.description = description;
     if (image) item.image = image;

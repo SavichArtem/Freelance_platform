@@ -24,8 +24,6 @@ const ProfilePage = () => {
     confirmPassword: '',
   });
   const [showPasswordForm, setShowPasswordForm] = useState(false);
-  const [message, setMessage] = useState('');
-  const [messageType, setMessageType] = useState('success');
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [avatarBase64, setAvatarBase64] = useState('');
   const [errors, setErrors] = useState({});
@@ -43,6 +41,8 @@ const ProfilePage = () => {
   const [serviceForm, setServiceForm] = useState({ name: '', description: '', price: '', categoryId: '' });
   const [serviceErrors, setServiceErrors] = useState({});
   const [categoriesList, setCategoriesList] = useState([]);
+
+  const [message, setMessage] = useState('');
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -82,7 +82,6 @@ const ProfilePage = () => {
 
   const showMessage = (text, type = 'success') => {
     setMessage(text);
-    setMessageType(type);
     setTimeout(() => setMessage(''), 5000);
   };
 
@@ -98,23 +97,19 @@ const ProfilePage = () => {
     if (passwordErrors[name]) setPasswordErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
-  };
+  const handleAvatarClick = () => fileInputRef.current?.click();
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     if (!['image/jpeg', 'image/png'].includes(file.type)) {
-      showMessage('Доступны только форматы jpg и png', 'error');
+      showMessage('Доступны только форматы jpg и png');
       return;
     }
     if (file.size > 20 * 1024 * 1024) {
-      showMessage('Файл не должен превышать 20 МБ', 'error');
+      showMessage('Файл не должен превышать 20 МБ');
       return;
     }
-
     const reader = new FileReader();
     reader.onloadend = () => {
       setAvatarPreview(reader.result);
@@ -129,34 +124,23 @@ const ProfilePage = () => {
     setMessage('');
 
     const newErrors = {};
-    if (!formData.login.trim()) {
-      newErrors.login = 'Логин обязателен';
-    } else if (formData.login.trim().length < 3) {
-      newErrors.login = 'Логин должен быть не менее 3 символов';
-    }
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email обязателен';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Некорректный email';
-    }
+    if (!formData.login.trim()) newErrors.login = 'Логин обязателен';
+    else if (formData.login.trim().length < 3) newErrors.login = 'Логин должен быть не менее 3 символов';
+    if (!formData.email.trim()) newErrors.email = 'Email обязателен';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Некорректный email';
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
-    dispatch(updateProfile({
-      login: formData.login,
-      email: formData.email,
-      description: formData.description,
-      avatar: avatarBase64,
-    }))
+    dispatch(updateProfile({ login: formData.login, email: formData.email, description: formData.description, avatar: avatarBase64 }))
       .unwrap()
       .then(() => {
-        showMessage('Профиль успешно обновлен', 'success');
+        showMessage('Профиль успешно обновлен');
         setAvatarPreview(null);
       })
-      .catch((err) => showMessage(err, 'error'));
+      .catch((err) => setErrors(prev => ({ ...prev, general: err })));
   };
 
   const handleChangePassword = (e) => {
@@ -166,32 +150,23 @@ const ProfilePage = () => {
 
     const newErrors = {};
     if (!passwordData.currentPassword) newErrors.currentPassword = 'Введите текущий пароль';
-    if (!passwordData.newPassword) {
-      newErrors.newPassword = 'Введите новый пароль';
-    } else if (passwordData.newPassword.length < 6) {
-      newErrors.newPassword = 'Пароль должен быть не менее 6 символов';
-    }
-    if (!passwordData.confirmPassword) {
-      newErrors.confirmPassword = 'Подтвердите новый пароль';
-    } else if (passwordData.newPassword !== passwordData.confirmPassword) {
-      newErrors.confirmPassword = 'Пароли не совпадают';
-    }
+    if (!passwordData.newPassword) newErrors.newPassword = 'Введите новый пароль';
+    else if (passwordData.newPassword.length < 6) newErrors.newPassword = 'Пароль должен быть не менее 6 символов';
+    if (!passwordData.confirmPassword) newErrors.confirmPassword = 'Подтвердите новый пароль';
+    else if (passwordData.newPassword !== passwordData.confirmPassword) newErrors.confirmPassword = 'Пароли не совпадают';
 
     if (Object.keys(newErrors).length > 0) {
       setPasswordErrors(newErrors);
       return;
     }
 
-    dispatch(changePassword({
-      currentPassword: passwordData.currentPassword,
-      newPassword: passwordData.newPassword,
-    }))
+    dispatch(changePassword({ currentPassword: passwordData.currentPassword, newPassword: passwordData.newPassword }))
       .unwrap()
       .then(() => {
-        showMessage('Пароль успешно изменен', 'success');
+        showMessage('Пароль успешно изменен');
         setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       })
-      .catch((err) => showMessage(err, 'error'));
+      .catch((err) => setPasswordErrors(prev => ({ ...prev, general: err })));
   };
 
   const handlePortfolioChange = (e) => {
@@ -216,7 +191,9 @@ const ProfilePage = () => {
   const validatePortfolioForm = () => {
     const newErrors = {};
     if (!portfolioForm.title.trim()) newErrors.title = 'Название обязательно';
+    if (portfolioForm.title.length > 60) newErrors.title = 'Название не должно превышать 60 символов';
     if (!portfolioForm.image) newErrors.image = 'Изображение обязательно';
+    if (portfolioForm.description && portfolioForm.description.length > 500) newErrors.description = 'Описание не должно превышать 500 символов';
     setPortfolioErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -227,17 +204,17 @@ const ProfilePage = () => {
     try {
       if (editingPortfolioId) {
         await portfolioApi.update(editingPortfolioId, portfolioForm);
-        showMessage('Работа обновлена', 'success');
+        showMessage('Работа обновлена');
       } else {
         await portfolioApi.add(portfolioForm);
-        showMessage('Работа добавлена', 'success');
+        showMessage('Работа добавлена');
       }
       setPortfolioForm({ title: '', description: '', image: '' });
       setShowPortfolioForm(false);
       setEditingPortfolioId(null);
       loadFreelancerData();
     } catch (error) {
-      showMessage(error.response?.data?.message || 'Ошибка', 'error');
+      setPortfolioErrors(prev => ({ ...prev, general: error.response?.data?.message || 'Ошибка' }));
     }
   };
 
@@ -251,10 +228,10 @@ const ProfilePage = () => {
     if (!window.confirm('Удалить работу из портфолио?')) return;
     try {
       await portfolioApi.delete(id);
-      showMessage('Работа удалена', 'success');
+      showMessage('Работа удалена');
       loadFreelancerData();
     } catch (error) {
-      showMessage(error.response?.data?.message || 'Ошибка', 'error');
+      showMessage(error.response?.data?.message || 'Ошибка');
     }
   };
 
@@ -274,8 +251,10 @@ const ProfilePage = () => {
   const validateServiceForm = () => {
     const newErrors = {};
     if (!serviceForm.name.trim()) newErrors.name = 'Название обязательно';
+    if (serviceForm.name.length > 60) newErrors.name = 'Название не должно превышать 60 символов';
     if (!serviceForm.price || Number(serviceForm.price) <= 0) newErrors.price = 'Укажите цену';
     if (!serviceForm.categoryId) newErrors.categoryId = 'Выберите категорию';
+    if (serviceForm.description && serviceForm.description.length > 500) newErrors.description = 'Описание не должно превышать 500 символов';
     setServiceErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -286,37 +265,26 @@ const ProfilePage = () => {
     try {
       if (editingServiceId) {
         await axiosInstance.put(`/services/${editingServiceId}`, {
-          name: serviceForm.name,
-          description: serviceForm.description,
-          price: serviceForm.price,
-          categoryId: serviceForm.categoryId,
+          name: serviceForm.name, description: serviceForm.description, price: serviceForm.price, categoryId: serviceForm.categoryId,
         });
-        showMessage('Услуга обновлена', 'success');
+        showMessage('Услуга обновлена');
       } else {
         await axiosInstance.post('/services', {
-          name: serviceForm.name,
-          description: serviceForm.description,
-          price: serviceForm.price,
-          categoryId: serviceForm.categoryId,
+          name: serviceForm.name, description: serviceForm.description, price: serviceForm.price, categoryId: serviceForm.categoryId,
         });
-        showMessage('Услуга добавлена', 'success');
+        showMessage('Услуга добавлена');
       }
       setServiceForm({ name: '', description: '', price: '', categoryId: '' });
       setShowServiceForm(false);
       setEditingServiceId(null);
       loadFreelancerData();
     } catch (error) {
-      showMessage(error.response?.data?.message || 'Ошибка', 'error');
+      setServiceErrors(prev => ({ ...prev, general: error.response?.data?.message || 'Ошибка' }));
     }
   };
 
   const handleEditService = (service) => {
-    setServiceForm({
-      name: service.name,
-      description: service.description || '',
-      price: service.price,
-      categoryId: service.categoryId || '',
-    });
+    setServiceForm({ name: service.name, description: service.description || '', price: service.price, categoryId: service.categoryId || '' });
     setEditingServiceId(service.id);
     setShowServiceForm(true);
   };
@@ -325,10 +293,10 @@ const ProfilePage = () => {
     if (!window.confirm('Удалить услугу?')) return;
     try {
       await axiosInstance.delete(`/services/${id}`);
-      showMessage('Услуга удалена', 'success');
+      showMessage('Услуга удалена');
       loadFreelancerData();
     } catch (error) {
-      showMessage(error.response?.data?.message || 'Ошибка', 'error');
+      showMessage(error.response?.data?.message || 'Ошибка');
     }
   };
 
@@ -357,15 +325,9 @@ const ProfilePage = () => {
           <h1 className="profile-page-title">Мой профиль</h1>
         </div>
 
-        {message && (
-          <div className={`message-alert ${messageType === 'success' ? 'message-success' : 'message-error'}`}>
-            {message}
-          </div>
-        )}
-
         <div className="profile-card">
           <div className="profile-avatar-section">
-            <div className="profile-avatar avatar-clickable" onClick={handleAvatarClick} title="Нажмите, чтобы изменить аватар">
+            <div className="profile-avatar avatar-clickable" onClick={handleAvatarClick} title="Изменить аватар">
               {avatarSrc ? (
                 <img src={avatarSrc} alt={formData.login} />
               ) : (
@@ -384,8 +346,8 @@ const ProfilePage = () => {
           </div>
 
           <div className="profile-tabs">
-            <button className={`tab-btn ${!showPasswordForm ? 'tab-btn-active' : ''}`} onClick={() => { setShowPasswordForm(false); setMessage(''); }} type="button">Личные данные</button>
-            <button className={`tab-btn ${showPasswordForm ? 'tab-btn-active' : ''}`} onClick={() => { setShowPasswordForm(true); setMessage(''); }} type="button">Безопасность</button>
+            <button className={`tab-btn ${!showPasswordForm ? 'tab-btn-active' : ''}`} onClick={() => setShowPasswordForm(false)} type="button">Личные данные</button>
+            <button className={`tab-btn ${showPasswordForm ? 'tab-btn-active' : ''}`} onClick={() => setShowPasswordForm(true)} type="button">Безопасность</button>
           </div>
 
           {!showPasswordForm ? (
@@ -403,9 +365,10 @@ const ProfilePage = () => {
               {user.role === 'freelancer' && (
                 <div className="form-group">
                   <label className="form-label">Описание</label>
-                  <textarea name="description" value={formData.description} onChange={handleChange} className="form-input form-textarea" rows="4" placeholder="Расскажите о себе и своих навыках" />
+                  <textarea name="description" value={formData.description} onChange={handleChange} className="form-input form-textarea" rows="4" placeholder="Расскажите о себе" />
                 </div>
               )}
+              {errors.general && <div className="form-error">{errors.general}</div>}
               <div className="form-actions">
                 <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Сохранение...' : 'Сохранить'}</button>
               </div>
@@ -427,6 +390,7 @@ const ProfilePage = () => {
                 <input type="password" name="confirmPassword" value={passwordData.confirmPassword} onChange={handlePasswordChange} className={`form-input ${passwordErrors.confirmPassword ? 'form-input-error' : ''}`} placeholder="Повторите новый пароль" />
                 {passwordErrors.confirmPassword && <span className="form-error">{passwordErrors.confirmPassword}</span>}
               </div>
+              {passwordErrors.general && <div className="form-error">{passwordErrors.general}</div>}
               <div className="form-actions">
                 <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Сохранение...' : 'Изменить пароль'}</button>
               </div>
@@ -439,17 +403,17 @@ const ProfilePage = () => {
             <div className="profile-card" style={{ marginTop: '24px' }}>
               <div className="profile-form">
                 <h3 style={{ marginBottom: '16px', color: 'var(--text-primary)' }}>Мои услуги</h3>
-                
+
                 {services.length > 0 && (
                   <div style={{ marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {services.map(service => (
-                      <div key={service.id} style={{ padding: '12px', background: 'var(--bg-secondary)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <strong style={{ color: 'var(--text-primary)' }}>{service.name}</strong>
-                          <div style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{service.description}</div>
-                          <div style={{ color: 'var(--blue)', fontWeight: 600 }}>{Number(service.price).toLocaleString()} ₽</div>
+                      <div key={service.id} className="service-row">
+                        <div className="service-info">
+                          <strong className="service-name-text">{service.name}</strong>
+                          <div className="service-desc-text">{service.description}</div>
+                          <div className="service-price-text">{Number(service.price).toLocaleString()} ₽</div>
                         </div>
-                        <div style={{ display: 'flex', gap: '8px' }}>
+                        <div className="service-actions">
                           <button onClick={() => handleEditService(service)} className="btn btn-sm btn-primary">Редактировать</button>
                           <button onClick={() => handleDeleteService(service.id)} className="btn btn-sm btn-danger">Удалить</button>
                         </div>
@@ -460,14 +424,16 @@ const ProfilePage = () => {
 
                 {showServiceForm ? (
                   <form onSubmit={handleAddService}>
+                    {serviceErrors.general && <div className="form-error" style={{ marginBottom: '12px' }}>{serviceErrors.general}</div>}
                     <div className="form-group">
-                      <label className="form-label">Название услуги</label>
+                      <label className="form-label">Название (до 60 символов)</label>
                       <input type="text" name="name" value={serviceForm.name} onChange={handleServiceChange} className={`form-input ${serviceErrors.name ? 'form-input-error' : ''}`} />
                       {serviceErrors.name && <span className="form-error">{serviceErrors.name}</span>}
                     </div>
                     <div className="form-group">
-                      <label className="form-label">Описание</label>
-                      <textarea name="description" value={serviceForm.description} onChange={handleServiceChange} className="form-input form-textarea" rows="2" />
+                      <label className="form-label">Описание (до 500 символов)</label>
+                      <textarea name="description" value={serviceForm.description} onChange={handleServiceChange} className={`form-input form-textarea ${serviceErrors.description ? 'form-input-error' : ''}`} rows="2" />
+                      {serviceErrors.description && <span className="form-error">{serviceErrors.description}</span>}
                     </div>
                     <div className="form-group">
                       <label className="form-label">Цена (₽)</label>
@@ -478,9 +444,7 @@ const ProfilePage = () => {
                       <label className="form-label">Категория</label>
                       <select name="categoryId" value={serviceForm.categoryId} onChange={handleServiceChange} className={`form-input ${serviceErrors.categoryId ? 'form-input-error' : ''}`}>
                         <option value="">Выберите категорию</option>
-                        {categoriesList.map(cat => (
-                          <option key={cat.id} value={cat.id}>{cat.name}</option>
-                        ))}
+                        {categoriesList.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                       </select>
                       {serviceErrors.categoryId && <span className="form-error">{serviceErrors.categoryId}</span>}
                     </div>
@@ -498,17 +462,13 @@ const ProfilePage = () => {
             <div className="profile-card" style={{ marginTop: '24px' }}>
               <div className="profile-form">
                 <h3 style={{ marginBottom: '16px', color: 'var(--text-primary)' }}>Мое портфолио</h3>
-                
+
                 {portfolioItems.length > 0 && (
                   <div className="portfolio-grid" style={{ marginBottom: '20px' }}>
                     {portfolioItems.map(item => (
                       <div key={item.id} className="portfolio-card">
                         <div className="portfolio-image">
-                          {item.image ? (
-                            <img src={item.image} alt={item.title} />
-                          ) : (
-                            <div className="portfolio-placeholder">📁</div>
-                          )}
+                          {item.image ? <img src={item.image} alt={item.title} /> : <div className="portfolio-placeholder">📁</div>}
                         </div>
                         <h4 className="portfolio-title">{item.title}</h4>
                         <p className="portfolio-description">{item.description}</p>
@@ -523,19 +483,21 @@ const ProfilePage = () => {
 
                 {showPortfolioForm ? (
                   <form onSubmit={handleAddPortfolio}>
+                    {portfolioErrors.general && <div className="form-error" style={{ marginBottom: '12px' }}>{portfolioErrors.general}</div>}
                     <div className="form-group">
-                      <label className="form-label">Название работы</label>
+                      <label className="form-label">Название (до 60 символов)</label>
                       <input type="text" name="title" value={portfolioForm.title} onChange={handlePortfolioChange} className={`form-input ${portfolioErrors.title ? 'form-input-error' : ''}`} />
                       {portfolioErrors.title && <span className="form-error">{portfolioErrors.title}</span>}
                     </div>
                     <div className="form-group">
-                      <label className="form-label">Описание</label>
-                      <textarea name="description" value={portfolioForm.description} onChange={handlePortfolioChange} className="form-input form-textarea" rows="3" />
+                      <label className="form-label">Описание (до 500 символов)</label>
+                      <textarea name="description" value={portfolioForm.description} onChange={handlePortfolioChange} className={`form-input form-textarea ${portfolioErrors.description ? 'form-input-error' : ''}`} rows="3" />
+                      {portfolioErrors.description && <span className="form-error">{portfolioErrors.description}</span>}
                     </div>
                     <div className="form-group">
                       <label className="form-label">Изображение</label>
                       <input type="file" onChange={handlePortfolioImageChange} accept=".jpg,.jpeg,.png" />
-                      {portfolioErrors.image && <span className="form-error" style={{ display: 'block' }}>{portfolioErrors.image}</span>}
+                      {portfolioErrors.image && <span className="form-error">{portfolioErrors.image}</span>}
                       {portfolioForm.image && <img src={portfolioForm.image} alt="preview" style={{ maxWidth: '200px', marginTop: '8px', borderRadius: '8px', display: 'block' }} />}
                     </div>
                     <div className="form-actions">

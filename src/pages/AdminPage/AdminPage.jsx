@@ -146,29 +146,31 @@ const AdminPage = () => {
             <div className="stat-card"><h3>{stats.totalFreelancers}</h3><p>Фрилансеров</p></div>
             <div className="stat-card"><h3>{stats.totalCustomers}</h3><p>Заказчиков</p></div>
             <div className="stat-card"><h3>{stats.totalOrders}</h3><p>Заказов</p></div>
-            <div className="stat-card"><h3>{stats.totalDisputes}</h3><p>Открытых споров</p></div>
+            <div className="stat-card"><h3>{stats.totalDisputes}</h3><p>Споров</p></div>
           </div>
         )}
 
         {activeTab === 'users' && (
-          <table className="admin-table">
-            <thead><tr><th>ID</th><th>Логин</th><th>Email</th><th>Роль</th><th>Статус</th><th>Действия</th></tr></thead>
-            <tbody>
-              {users.map(u => (
-                <tr key={u.id}>
-                  <td>{u.id}</td><td>{u.login}</td><td>{u.email}</td><td>{u.role}</td>
-                  <td>{u.status === 'blocked' ? 'Заблокирован' : 'Активен'}</td>
-                  <td>
-                    {u.status === 'blocked' ? (
-                      <button onClick={() => handleUnblockUser(u.id)} className="btn btn-success btn-sm">Разблокировать</button>
-                    ) : (
-                      <button onClick={() => handleBlockUser(u.id)} className="btn btn-danger btn-sm">Заблокировать</button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="responsive-table">
+            <table className="admin-table">
+              <thead><tr><th>ID</th><th>Логин</th><th>Email</th><th>Роль</th><th>Статус</th><th>Действия</th></tr></thead>
+              <tbody>
+                {users.map(u => (
+                  <tr key={u.id}>
+                    <td>{u.id}</td><td>{u.login}</td><td>{u.email}</td><td>{u.role}</td>
+                    <td>{u.status === 'blocked' ? 'Заблокирован' : 'Активен'}</td>
+                    <td>
+                      {u.status === 'blocked' ? (
+                        <button onClick={() => handleUnblockUser(u.id)} className="btn btn-success btn-sm">Разблокировать</button>
+                      ) : (
+                        <button onClick={() => handleBlockUser(u.id)} className="btn btn-danger btn-sm">Заблокировать</button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
         {activeTab === 'categories' && (
@@ -179,24 +181,26 @@ const AdminPage = () => {
               <button onClick={handleCreateCategory} className="btn btn-primary">Добавить</button>
             </div>
             <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', marginTop: '16px' }}>
-              <button onClick={() => generateCategoriesDOCX(categories)} className="btn btn-sm btn-primary">
-                Экспорт в DOCX
-              </button>
+              <button onClick={() => generateCategoriesDOCX(categories)} className="btn btn-sm btn-primary">Экспорт в DOCX</button>
             </div>
-            <table className="admin-table">
-              <thead><tr><th>ID</th><th>Название</th><th>Описание</th><th>Услуг</th><th>Действия</th></tr></thead>
-              <tbody>
-                {categories.map(c => (
-                  <tr key={c.id}>
-                    <td>{c.id}</td><td>{c.name}</td><td>{c.description || '—'}</td><td>{c.servicesCount}</td>
-                    <td>
-                      <button onClick={() => setEditingCategory({ id: c.id, name: c.name, description: c.description })} className="btn btn-sm btn-primary">✏️</button>
-                      <button onClick={() => handleDeleteCategory(c.id)} className="btn btn-sm btn-danger">🗑️</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="responsive-table">
+              <table className="admin-table">
+                <thead><tr><th>ID</th><th>Название</th><th>Описание</th><th>Услуг</th><th>Действия</th></tr></thead>
+                <tbody>
+                  {categories.map(c => (
+                    <tr key={c.id}>
+                      <td>{c.id}</td><td>{c.name}</td><td>{c.description || '—'}</td><td>{c.servicesCount}</td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <button onClick={() => setEditingCategory({ id: c.id, name: c.name, description: c.description })} className="btn btn-sm btn-primary">Редактировать</button>
+                          <button onClick={() => handleDeleteCategory(c.id)} className="btn btn-sm btn-danger">Удалить</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             {editingCategory && (
               <div className="modal-overlay">
                 <div className="modal">
@@ -214,28 +218,28 @@ const AdminPage = () => {
         {activeTab === 'reviews' && (
           <div>
             <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
-              <button onClick={() => generateReviewsPDF(reviews)} className="btn btn-sm btn-primary">
-                Экспорт в PDF
-              </button>
+              <button onClick={() => generateReviewsPDF(reviews)} className="btn btn-sm btn-primary">Экспорт в PDF</button>
             </div>
-            <table className="admin-table">
-              <thead><tr><th>ID</th><th>Оценка</th><th>Текст</th><th>Автор</th><th>Статус</th><th>Действия</th></tr></thead>
-              <tbody>
-                {reviews.map(r => (
-                  <tr key={r.id}>
-                    <td>{r.id}</td><td>{'⭐'.repeat(r.rating)}</td><td>{r.text}</td><td>{r.author}</td>
-                    <td>{r.status === 'blocked' ? '❌' : '✅'}</td>
-                    <td>
-                      {r.status === 'blocked' ? (
-                        <button onClick={() => handleApproveReview(r.id)} className="btn btn-success btn-sm">Одобрить</button>
-                      ) : (
-                        <button onClick={() => handleBlockReview(r.id)} className="btn btn-danger btn-sm">Заблокировать</button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className="responsive-table">
+              <table className="admin-table">
+                <thead><tr><th>ID</th><th>Оценка</th><th>Текст</th><th>Автор</th><th>Статус</th><th>Действия</th></tr></thead>
+                <tbody>
+                  {reviews.map(r => (
+                    <tr key={r.id}>
+                      <td>{r.id}</td><td>{r.rating}/5</td><td>{r.text.length > 50 ? r.text.substring(0, 50) + '...' : r.text}</td><td>{r.author}</td>
+                      <td>{r.status === 'blocked' ? 'Заблокирован' : 'Активен'}</td>
+                      <td>
+                        {r.status === 'blocked' ? (
+                          <button onClick={() => handleApproveReview(r.id)} className="btn btn-success btn-sm">Одобрить</button>
+                        ) : (
+                          <button onClick={() => handleBlockReview(r.id)} className="btn btn-danger btn-sm">Заблокировать</button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -261,7 +265,7 @@ const AdminPage = () => {
                       <div className="dispute-info-row"><span>Заказчик:</span><span>{d.customer}</span></div>
                       <div className="dispute-info-row"><span>Фрилансер:</span><span>{d.freelancer}</span></div>
                       <div className="dispute-info-row"><span>Услуга:</span><span>{d.service}</span></div>
-                      <div className="dispute-info-row"><span>Бюджет:</span><span>{Number(d.budget).toLocaleString()} ₽</span></div>
+                      <div className="dispute-info-row"><span>Бюджет:</span><span>{Number(d.budget).toLocaleString()} руб.</span></div>
                       <div className="dispute-info-row"><span>Причина:</span><span className="dispute-reason">{d.reason}</span></div>
                       <div className="dispute-comment-box">
                         <strong>Комментарий заказчика:</strong>
@@ -272,11 +276,7 @@ const AdminPage = () => {
                         <div className="dispute-chat-history">
                           <strong>История переписки:</strong>
                           <div style={{ height: '300px', marginTop: '8px', border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden' }}>
-                            <Chat
-                              messages={disputeMessages[d.id]}
-                              partnerName={disputePartner[d.id]?.login || ''}
-                              readOnly={true}
-                            />
+                            <Chat messages={disputeMessages[d.id]} partnerName={disputePartner[d.id]?.login || ''} readOnly={true} />
                           </div>
                         </div>
                       )}

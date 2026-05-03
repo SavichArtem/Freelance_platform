@@ -19,6 +19,14 @@ router.post('/', async (req, res, next) => {
       return res.status(400).json({ message: 'Название, цена и категория обязательны' });
     }
 
+    if (name.length > 60) {
+      return res.status(400).json({ message: 'Название услуги не должно превышать 60 символов' });
+    }
+
+    if (description && description.length > 500) {
+      return res.status(400).json({ message: 'Описание услуги не должно превышать 500 символов' });
+    }
+
     const service = await Service.create({
       freelancerId: freelancer.id,
       categoryId,
@@ -44,6 +52,15 @@ router.put('/:id', async (req, res, next) => {
     if (!service) return res.status(404).json({ message: 'Не найдено' });
 
     const { name, description, price, categoryId } = req.body;
+
+    if (name && name.length > 60) {
+      return res.status(400).json({ message: 'Название услуги не должно превышать 60 символов' });
+    }
+
+    if (description && description.length > 500) {
+      return res.status(400).json({ message: 'Описание услуги не должно превышать 500 символов' });
+    }
+
     if (name) service.name = name;
     if (description !== undefined) service.description = description;
     if (price) service.price = price;

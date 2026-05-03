@@ -35,7 +35,12 @@ const Header = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const isActive = (path) => location.pathname === path ? 'active' : '';
+  const isActive = (path) => {
+    if (path === '/messages') {
+      return location.pathname.startsWith('/messages') ? 'active' : '';
+    }
+    return location.pathname === path ? 'active' : '';
+  };
 
   const handleLogout = () => {
     dispatch(logout());
@@ -97,6 +102,13 @@ const Header = () => {
 
           <nav className={`nav ${showMobileMenu ? 'nav-open' : ''}`}>
             <ul className="nav-menu">
+              {isAuthenticated && (
+                <li className="mobile-profile-link">
+                  <Link to="/profile" className={isActive('/profile')} onClick={() => setShowMobileMenu(false)}>
+                    {user?.login || 'Профиль'}
+                  </Link>
+                </li>
+              )}
               <li><Link to="/services" className={isActive('/services')} onClick={() => setShowMobileMenu(false)}>Услуги</Link></li>
               {isAuthenticated && (
                 <>
