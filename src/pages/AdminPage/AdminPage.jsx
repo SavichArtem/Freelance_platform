@@ -10,6 +10,7 @@ import {
 } from '../../store/slices/adminSlice';
 import { messagesApi } from '../../api/messagesApi';
 import Chat from '../../components/Chat/Chat';
+import { generateReviewsPDF, generateCategoriesDOCX } from '../../utils/reports';
 import './AdminPage.css';
 
 const AdminPage = () => {
@@ -156,7 +157,7 @@ const AdminPage = () => {
               {users.map(u => (
                 <tr key={u.id}>
                   <td>{u.id}</td><td>{u.login}</td><td>{u.email}</td><td>{u.role}</td>
-                  <td>{u.status === 'blocked' ? '❌ Заблокирован' : '✅ Активен'}</td>
+                  <td>{u.status === 'blocked' ? 'Заблокирован' : 'Активен'}</td>
                   <td>
                     {u.status === 'blocked' ? (
                       <button onClick={() => handleUnblockUser(u.id)} className="btn btn-success btn-sm">Разблокировать</button>
@@ -176,6 +177,11 @@ const AdminPage = () => {
               <input value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} placeholder="Название категории" className="form-input" />
               <input value={newCategoryDesc} onChange={e => setNewCategoryDesc(e.target.value)} placeholder="Описание" className="form-input" />
               <button onClick={handleCreateCategory} className="btn btn-primary">Добавить</button>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', marginTop: '16px' }}>
+              <button onClick={() => generateCategoriesDOCX(categories)} className="btn btn-sm btn-primary">
+                Экспорт в DOCX
+              </button>
             </div>
             <table className="admin-table">
               <thead><tr><th>ID</th><th>Название</th><th>Описание</th><th>Услуг</th><th>Действия</th></tr></thead>
@@ -206,24 +212,31 @@ const AdminPage = () => {
         )}
 
         {activeTab === 'reviews' && (
-          <table className="admin-table">
-            <thead><tr><th>ID</th><th>Оценка</th><th>Текст</th><th>Автор</th><th>Статус</th><th>Действия</th></tr></thead>
-            <tbody>
-              {reviews.map(r => (
-                <tr key={r.id}>
-                  <td>{r.id}</td><td>{'⭐'.repeat(r.rating)}</td><td>{r.text}</td><td>{r.author}</td>
-                  <td>{r.status === 'blocked' ? '❌' : '✅'}</td>
-                  <td>
-                    {r.status === 'blocked' ? (
-                      <button onClick={() => handleApproveReview(r.id)} className="btn btn-success btn-sm">Одобрить</button>
-                    ) : (
-                      <button onClick={() => handleBlockReview(r.id)} className="btn btn-danger btn-sm">Заблокировать</button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+              <button onClick={() => generateReviewsPDF(reviews)} className="btn btn-sm btn-primary">
+                Экспорт в PDF
+              </button>
+            </div>
+            <table className="admin-table">
+              <thead><tr><th>ID</th><th>Оценка</th><th>Текст</th><th>Автор</th><th>Статус</th><th>Действия</th></tr></thead>
+              <tbody>
+                {reviews.map(r => (
+                  <tr key={r.id}>
+                    <td>{r.id}</td><td>{'⭐'.repeat(r.rating)}</td><td>{r.text}</td><td>{r.author}</td>
+                    <td>{r.status === 'blocked' ? '❌' : '✅'}</td>
+                    <td>
+                      {r.status === 'blocked' ? (
+                        <button onClick={() => handleApproveReview(r.id)} className="btn btn-success btn-sm">Одобрить</button>
+                      ) : (
+                        <button onClick={() => handleBlockReview(r.id)} className="btn btn-danger btn-sm">Заблокировать</button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
         {activeTab === 'disputes' && (
