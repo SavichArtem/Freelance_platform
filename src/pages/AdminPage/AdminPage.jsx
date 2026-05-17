@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-  fetchAdminStats, fetchAdminUsers, blockUser, unblockUser,
-  fetchAdminCategories, createCategory, updateCategory, deleteCategory,
-  fetchAdminReviews, blockReview, approveReview,
-  fetchAdminDisputes, resolveDispute,
-  clearAdminError, clearAdminMessage
+  fetchStatsSuccess, fetchUsersSuccess, blockUserSuccess, unblockUserSuccess,
+  fetchCategoriesSuccess, createCategorySuccess, updateCategorySuccess, deleteCategorySuccess,
+  fetchReviewsSuccess, blockReviewSuccess, approveReviewSuccess,
+  fetchDisputesSuccess, resolveDisputeSuccess,
+  setError, clearMessage, clearError
 } from '../../store/slices/adminSlice';
+import { adminApi } from '../../api/adminApi';
 import { messagesApi } from '../../api/messagesApi';
 import Chat from '../../components/Chat/Chat';
 import { generateReviewsPDF, generateCategoriesDOCX } from '../../utils/reports';
@@ -34,95 +35,48 @@ const AdminPage = () => {
 
   useEffect(() => {
     if (!isAuthenticated || user?.role !== 'admin') { navigate('/'); return; }
-    dispatch(fetchAdminStats());
+    loadStats();
     const tab = searchParams.get('tab');
-    if (tab) {
-      setActiveTab(tab);
-      if (tab === 'disputes') dispatch(fetchAdminDisputes());
-    }
-  }, [isAuthenticated, user, navigate, dispatch, searchParams]);
+    if (tab) { setActiveTab(tab); if (tab === 'disputes') loadDisputes(); }
+  }, [isAuthenticated, user, navigate, searchParams]);
 
-  useEffect(() => {
-    if (message) setTimeout(() => dispatch(clearAdminMessage()), 3000);
-    if (error) setTimeout(() => dispatch(clearAdminError()), 5000);
-  }, [message, error, dispatch]);
+  useEffect(() => { if (message) setTimeout(() => dispatch(clearMessage()), 3000); if (error) setTimeout(() => dispatch(clearError()), 5000); }, [message, error]);
 
-  useEffect(() => {
-    if (activeTab === 'disputes') {
-      dispatch(fetchAdminDisputes()).then((res) => {
-        if (res.payload?.disputes) {
-          const resolved = {};
-          res.payload.disputes.forEach(d => {
-            if (d.status !== 'open') resolved[d.id] = true;
-          });
-          setDisputeResolved(resolved);
-        }
-      });
-    }
-  }, [activeTab, dispatch]);
+  const loadStats = () => adminApi.getStats().then(res => dispatch(fetchStatsSuccess(res.data))).catch(() => {});
+  const loadUsers = () => adminApi.getUsers({}).then(res => dispatch(fetchUsersSuccess(res.data))).catch(() => {});
+  const loadCategories = () => adminApi.getCategories().then(res => dispatch(fetchCategoriesSuccess(res.data))).catch(() => {});
+  const loadReviews = () => adminApi.getReviews().then(res => dispatch(fetchReviewsSuccess(res.data))).catch(() => {});
+  const loadDisputes = () => adminApi.getDisputes().then(res => {
+    dispatch(fetchDisputesSuccess(res.data));
+    const resolved = {};
+    (res.data.disputes || []).forEach(d => { if (d.status !== 'open') resolved[d.id] = true; });
+    setDisputeResolved(resolved);
+  }).catch(() => {});
 
   const loadTab = (tab) => {
     setActiveTab(tab);
     switch (tab) {
-      case 'stats': dispatch(fetchAdminStats()); break;
-      case 'users': dispatch(fetchAdminUsers({})); break;
-      case 'categories': dispatch(fetchAdminCategories()); break;
-      case 'reviews': dispatch(fetchAdminReviews()); break;
-      case 'disputes': dispatch(fetchAdminDisputes()); break;
+      case 'stats': loadStats(); break;
+      case 'users': loadUsers(); break;
+      case 'categories': loadCategories(); break;
+      case 'reviews': loadReviews(); break;
+      case 'disputes': loadDisputes(); break;
     }
   };
 
-  const handleBlockUser = (id) => dispatch(blockUser(id)).then(() => dispatch(fetchAdminUsers({})));
-  const handleUnblockUser = (id) => dispatch(unblockUser(id)).then(() => dispatch(fetchAdminUsers({})));
-
-  const handleCreateCategory = () => {
-    if (!newCategoryName.trim()) return;
-    dispatch(createCategory({ name: newCategoryName, description: newCategoryDesc }))
-      .then(() => { setNewCategoryName(''); setNewCategoryDesc(''); dispatch(fetchAdminCategories()); });
-  };
-
-  const handleUpdateCategory = (id) => {
-    dispatch(updateCategory({ id, data: editingCategory }))
-      .then(() => { setEditingCategory(null); dispatch(fetchAdminCategories()); });
-  };
-
-  const handleDeleteCategory = (id) => dispatch(deleteCategory(id)).then(() => dispatch(fetchAdminCategories()));
-  const handleBlockReview = (id) => dispatch(blockReview(id)).then(() => dispatch(fetchAdminReviews()));
-  const handleApproveReview = (id) => dispatch(approveReview(id)).then(() => dispatch(fetchAdminReviews()));
-
-  const handleViewDispute = async (d) => {
-    if (viewDispute === d.id) { setViewDispute(null); return; }
-    setViewDispute(d.id);
-    try {
-      const res = await messagesApi.getOrderMessages(d.orderId);
-      setDisputeMessages(prev => ({ ...prev, [d.id]: res.data.messages }));
-      setDisputePartner(prev => ({ ...prev, [d.id]: res.data.partner || { login: d.customer, id: d.id } }));
-    } catch (error) { console.error(error); }
-  };
-
-  const handleResolveDispute = (id) => {
-    if (!disputeDecision[id]) {
-      setResolveError(prev => ({ ...prev, [id]: 'Выберите сторону' }));
-      return;
-    }
-    if (!disputeComment[id]?.trim()) {
-      setResolveError(prev => ({ ...prev, [id]: 'Добавьте комментарий' }));
-      return;
-    }
-    setResolveError(prev => ({ ...prev, [id]: '' }));
-    dispatch(resolveDispute({ id, data: { decision: disputeDecision[id], adminComment: disputeComment[id] } }))
-      .then(() => {
-        setDisputeResolved(prev => ({ ...prev, [id]: true }));
-        dispatch(fetchAdminDisputes());
-      });
-  };
+  const handleBlockUser = async (id) => { try { await adminApi.blockUser(id); dispatch(blockUserSuccess({ message: 'Заблокирован' })); loadUsers(); } catch (err) { dispatch(setError(err.response?.data?.message)); } };
+  const handleUnblockUser = async (id) => { try { await adminApi.unblockUser(id); dispatch(unblockUserSuccess({ message: 'Разблокирован' })); loadUsers(); } catch (err) { dispatch(setError(err.response?.data?.message)); } };
+  const handleCreateCategory = async () => { if (!newCategoryName.trim()) return; try { await adminApi.createCategory({ name: newCategoryName, description: newCategoryDesc }); dispatch(createCategorySuccess({})); setNewCategoryName(''); setNewCategoryDesc(''); loadCategories(); } catch (err) { dispatch(setError(err.response?.data?.message)); } };
+  const handleUpdateCategory = async (id) => { try { await adminApi.updateCategory(id, editingCategory); dispatch(updateCategorySuccess({})); setEditingCategory(null); loadCategories(); } catch (err) { dispatch(setError(err.response?.data?.message)); } };
+  const handleDeleteCategory = async (id) => { try { await adminApi.deleteCategory(id); dispatch(deleteCategorySuccess({})); loadCategories(); } catch (err) { dispatch(setError(err.response?.data?.message)); } };
+  const handleBlockReview = async (id) => { try { await adminApi.blockReview(id); dispatch(blockReviewSuccess({})); loadReviews(); } catch (err) { dispatch(setError(err.response?.data?.message)); } };
+  const handleApproveReview = async (id) => { try { await adminApi.approveReview(id); dispatch(approveReviewSuccess({})); loadReviews(); } catch (err) { dispatch(setError(err.response?.data?.message)); } };
+  const handleViewDispute = async (d) => { if (viewDispute === d.id) { setViewDispute(null); return; } setViewDispute(d.id); try { const res = await messagesApi.getOrderMessages(d.orderId); setDisputeMessages(prev => ({ ...prev, [d.id]: res.data.messages })); setDisputePartner(prev => ({ ...prev, [d.id]: res.data.partner || { login: d.customer } })); } catch (err) { console.error(err); } };
+  const handleResolveDispute = async (id) => { if (!disputeDecision[id]) { setResolveError(prev => ({ ...prev, [id]: 'Выберите сторону' })); return; } if (!disputeComment[id]?.trim()) { setResolveError(prev => ({ ...prev, [id]: 'Добавьте комментарий' })); return; } try { const res = await adminApi.resolveDispute(id, { decision: disputeDecision[id], adminComment: disputeComment[id] }); dispatch(resolveDisputeSuccess(res.data)); setDisputeResolved(prev => ({ ...prev, [id]: true })); loadDisputes(); } catch (err) { dispatch(setError(err.response?.data?.message)); } };
 
   const tabs = [
-    { key: 'stats', label: 'Статистика' },
-    { key: 'users', label: 'Пользователи' },
-    { key: 'categories', label: 'Категории' },
-    { key: 'reviews', label: 'Отзывы' },
-    { key: 'disputes', label: 'Споры' },
+    { key: 'stats', label: 'Статистика' }, { key: 'users', label: 'Пользователи' },
+    { key: 'categories', label: 'Категории' }, { key: 'reviews', label: 'Отзывы' }, { key: 'disputes', label: 'Споры' },
   ];
 
   return (
@@ -131,12 +85,9 @@ const AdminPage = () => {
         <h1 className="admin-title">Административная панель</h1>
         {message && <div className="message-alert message-success">{message}</div>}
         {error && <div className="message-alert message-error">{error}</div>}
-
         <div className="admin-tabs">
           {tabs.map(tab => (
-            <button key={tab.key} className={`tab-btn ${activeTab === tab.key ? 'tab-btn-active' : ''}`} onClick={() => loadTab(tab.key)}>
-              {tab.label}
-            </button>
+            <button key={tab.key} className={`tab-btn ${activeTab === tab.key ? 'tab-btn-active' : ''}`} onClick={() => loadTab(tab.key)}>{tab.label}</button>
           ))}
         </div>
 
@@ -191,10 +142,8 @@ const AdminPage = () => {
                     <tr key={c.id}>
                       <td>{c.id}</td><td>{c.name}</td><td>{c.description || '—'}</td><td>{c.servicesCount}</td>
                       <td>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <button onClick={() => setEditingCategory({ id: c.id, name: c.name, description: c.description })} className="btn btn-sm btn-primary">Редактировать</button>
-                          <button onClick={() => handleDeleteCategory(c.id)} className="btn btn-sm btn-danger">Удалить</button>
-                        </div>
+                        <button onClick={() => setEditingCategory({ id: c.id, name: c.name, description: c.description })} className="btn btn-sm btn-primary">Редактировать</button>
+                        <button onClick={() => handleDeleteCategory(c.id)} className="btn btn-sm btn-danger">Удалить</button>
                       </td>
                     </tr>
                   ))}
@@ -251,15 +200,9 @@ const AdminPage = () => {
               disputes.map(d => (
                 <div key={d.id} className="dispute-card">
                   <div className="dispute-card-header">
-                    <div>
-                      <strong>Заказ {d.orderNumber}</strong>
-                      <span className="dispute-status">{d.status === 'open' ? 'Открыт' : 'Решен'}</span>
-                    </div>
-                    <button onClick={() => handleViewDispute(d)} className="btn btn-sm btn-primary">
-                      {viewDispute === d.id ? 'Скрыть' : 'Подробнее'}
-                    </button>
+                    <div><strong>Заказ {d.orderNumber}</strong><span className="dispute-status">{d.status === 'open' ? 'Открыт' : 'Решен'}</span></div>
+                    <button onClick={() => handleViewDispute(d)} className="btn btn-sm btn-primary">{viewDispute === d.id ? 'Скрыть' : 'Подробнее'}</button>
                   </div>
-
                   {viewDispute === d.id && (
                     <div className="dispute-details">
                       <div className="dispute-info-row"><span>Заказчик:</span><span>{d.customer}</span></div>
@@ -267,12 +210,8 @@ const AdminPage = () => {
                       <div className="dispute-info-row"><span>Услуга:</span><span>{d.service}</span></div>
                       <div className="dispute-info-row"><span>Бюджет:</span><span>{Number(d.budget).toLocaleString()} руб.</span></div>
                       <div className="dispute-info-row"><span>Причина:</span><span className="dispute-reason">{d.reason}</span></div>
-                      <div className="dispute-comment-box">
-                        <strong>Комментарий заказчика:</strong>
-                        <p>{d.comment}</p>
-                      </div>
-
-                      {disputeMessages[d.id] && disputeMessages[d.id].length > 0 && (
+                      <div className="dispute-comment-box"><strong>Комментарий заказчика:</strong><p>{d.comment}</p></div>
+                      {disputeMessages[d.id]?.length > 0 && (
                         <div className="dispute-chat-history">
                           <strong>История переписки:</strong>
                           <div style={{ height: '300px', marginTop: '8px', border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden' }}>
@@ -282,7 +221,6 @@ const AdminPage = () => {
                       )}
                     </div>
                   )}
-
                   {!disputeResolved[d.id] && d.status === 'open' ? (
                     <div className="dispute-resolution">
                       {resolveError[d.id] && <div className="form-error-message">{resolveError[d.id]}</div>}

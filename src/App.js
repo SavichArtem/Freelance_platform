@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchCurrentUser } from './store/slices/authSlice';
+import { setUser, logout } from './store/slices/authSlice';
 import { initTheme } from './store/slices/themeSlice';
+import { authApi } from './api/authApi';
 import Header from './components/Header/Header';
 import Footer from './components/Footer/Footer';
 import PrivateRoute from './components/PrivateRoute/PrivateRoute';
@@ -10,6 +11,7 @@ import AdminRoute from './components/PrivateRoute/AdminRoute';
 import MainPage from './pages/MainPage/MainPage';
 import LoginPage from './pages/LoginPage/LoginPage';
 import RegisterPage from './pages/RegisterPage/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage/ForgotPasswordPage';
 import CategoryPage from './pages/CategoryPage/CategoryPage';
 import FreelancerProfilePage from './pages/FreelancerProfilePage/FreelancerProfilePage';
 import ProfilePage from './pages/ProfilePage/ProfilePage';
@@ -19,7 +21,6 @@ import MessagesPage from './pages/MessagesPage/MessagesPage';
 import ChatPage from './pages/ChatPage/ChatPage';
 import AdminPage from './pages/AdminPage/AdminPage';
 import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage/ForgotPasswordPage';
 import './App.css';
 
 function AppContent() {
@@ -27,13 +28,13 @@ function AppContent() {
   const { token } = useSelector(state => state.auth);
   const location = useLocation();
 
-  useEffect(() => {
-    dispatch(initTheme());
-  }, [dispatch]);
+  useEffect(() => { dispatch(initTheme()); }, [dispatch]);
 
   useEffect(() => {
     if (token) {
-      dispatch(fetchCurrentUser());
+      authApi.getCurrentUser()
+        .then(res => dispatch(setUser(res.data.user)))
+        .catch(() => dispatch(logout()));
     }
   }, [dispatch, token]);
 
@@ -46,8 +47,8 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<MainPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/categories/:categoryId" element={<CategoryPage />} />
           <Route path="/services" element={<CategoryPage />} />
           <Route path="/freelancer/:freelancerId" element={<FreelancerProfilePage />} />

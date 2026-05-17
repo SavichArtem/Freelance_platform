@@ -1,30 +1,30 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import './ForgotPasswordPage.css';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import "./ForgotPasswordPage.css";
 
 const ForgotPasswordPage = () => {
-  const [email, setEmail] = useState('');
-  const [message, setMessage] = useState('');
-  const [messageType, setMessageType] = useState('success');
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("success");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!email.trim()) {
-      setMessage('Введите email');
-      setMessageType('error');
+      setMessage("Введите email");
+      setMessageType("error");
       return;
     }
 
     setLoading(true);
-    
+
     // Здесь будет API запрос на восстановление пароля
     setTimeout(() => {
-      setMessage('Инструкция по восстановлению пароля отправлена на ваш email');
-      setMessageType('success');
+      setMessage("Инструкция по восстановлению пароля отправлена на ваш email");
+      setMessageType("success");
       setLoading(false);
-      setEmail('');
+      setEmail("");
     }, 1000);
   };
 
@@ -33,20 +33,25 @@ const ForgotPasswordPage = () => {
       <div className="container">
         <div className="auth-form-container">
           <h1 className="auth-title">Восстановление пароля</h1>
-          
+
           {message && (
-            <div className={`auth-message ${messageType === 'success' ? 'message-success' : 'message-error'}`}>
+            <div
+              className={`auth-message ${messageType === "success" ? "message-success" : "message-error"}`}
+            >
               {message}
             </div>
           )}
-          
+
           <p className="forgot-description">
-            Введите email, указанный при регистрации. Мы отправим вам инструкцию по восстановлению пароля.
+            Введите email, указанный при регистрации. Мы отправим вам инструкцию
+            по восстановлению пароля.
           </p>
-          
+
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
-              <label htmlFor="email" className="form-label">Email</label>
+              <label htmlFor="email" className="form-label">
+                Email
+              </label>
               <input
                 type="email"
                 id="email"
@@ -58,8 +63,12 @@ const ForgotPasswordPage = () => {
               />
             </div>
 
-            <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
-              {loading ? 'Отправка...' : 'Восстановить пароль'}
+            <button
+              type="submit"
+              className="btn btn-primary btn-block"
+              disabled={loading}
+            >
+              {loading ? "Отправка..." : "Восстановить пароль"}
             </button>
           </form>
 

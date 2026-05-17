@@ -3,7 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../store/slices/authSlice';
 import { toggleTheme } from '../../store/slices/themeSlice';
-import { fetchNotifications, markAsRead, markAllAsRead, deleteAllNotifications } from '../../store/slices/notificationsSlice';
+import { fetchSuccess, markAsRead, markAllAsRead, deleteAllSuccess } from '../../store/slices/notificationsSlice';
+import { notificationsApi } from '../../api/notificationsApi';
 import './Header.css';
 
 const Header = () => {
@@ -17,64 +18,50 @@ const Header = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const notifRef = useRef(null);
 
+  const loadNotifications = () => {
+    notificationsApi.getAll().then(res => dispatch(fetchSuccess(res.data))).catch(() => {});
+  };
+
   useEffect(() => {
     if (isAuthenticated) {
-      dispatch(fetchNotifications());
-      const interval = setInterval(() => dispatch(fetchNotifications()), 15000);
+      loadNotifications();
+      const interval = setInterval(loadNotifications, 15000);
       return () => clearInterval(interval);
     }
-  }, [isAuthenticated, dispatch]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (notifRef.current && !notifRef.current.contains(e.target)) {
-        setShowNotifications(false);
-      }
+      if (notifRef.current && !notifRef.current.contains(e.target)) setShowNotifications(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const isActive = (path) => {
-    if (path === '/messages') {
-      return location.pathname.startsWith('/messages') ? 'active' : '';
-    }
+    if (path === '/messages') return location.pathname.startsWith('/messages') ? 'active' : '';
     return location.pathname === path ? 'active' : '';
   };
 
-  const handleLogout = () => {
-    dispatch(logout());
-    navigate('/');
-  };
+  const handleLogout = () => { dispatch(logout()); navigate('/'); };
 
   const handleNotificationClick = (notif) => {
-    if (!notif.isRead) dispatch(markAsRead(notif.id));
+    if (!notif.isRead) {
+      notificationsApi.markRead(notif.id);
+      dispatch(markAsRead(notif.id));
+    }
     setShowNotifications(false);
-
     switch (notif.type) {
-      case 'new_message':
-        navigate('/messages');
-        break;
-      case 'new_order':
-      case 'order_completed':
-      case 'order_returned':
-        navigate('/orders');
-        break;
-      case 'dispute_opened':
-      case 'dispute_resolved':
-        if (user?.role === 'admin') {
-          navigate('/admin?tab=disputes');
-        } else {
-          navigate('/orders');
-        }
-        break;
-      default:
+      case 'new_message': navigate('/messages'); break;
+      case 'new_order': case 'order_completed': case 'order_returned': navigate('/orders'); break;
+      case 'dispute_opened': case 'dispute_resolved':
+        user?.role === 'admin' ? navigate('/admin?tab=disputes') : navigate('/orders');
         break;
     }
   };
 
   const handleClearAll = () => {
-    dispatch(deleteAllNotifications());
+    notificationsApi.deleteAll().then(() => dispatch(deleteAllSuccess()));
   };
 
   const formatNotifTime = (dateString) => {
@@ -93,20 +80,14 @@ const Header = () => {
       <div className="container">
         <div className="header-inner">
           <Link to="/" className="logo">Фриланс Платформа</Link>
-
           <button className="mobile-menu-btn" onClick={() => setShowMobileMenu(!showMobileMenu)}>
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-              <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
-            </svg>
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
           </button>
-
           <nav className={`nav ${showMobileMenu ? 'nav-open' : ''}`}>
             <ul className="nav-menu">
               {isAuthenticated && (
                 <li className="mobile-profile-link">
-                  <Link to="/profile" className={isActive('/profile')} onClick={() => setShowMobileMenu(false)}>
-                    {user?.login || 'Профиль'}
-                  </Link>
+                  <Link to="/profile" className={isActive('/profile')} onClick={() => setShowMobileMenu(false)}>{user?.login || 'Профиль'}</Link>
                 </li>
               )}
               <li><Link to="/services" className={isActive('/services')} onClick={() => setShowMobileMenu(false)}>Услуги</Link></li>
@@ -114,71 +95,44 @@ const Header = () => {
                 <>
                   <li><Link to="/messages" className={isActive('/messages')} onClick={() => setShowMobileMenu(false)}>Сообщения</Link></li>
                   <li><Link to="/orders" className={isActive('/orders')} onClick={() => setShowMobileMenu(false)}>Мои заказы</Link></li>
-                  {user?.role === 'admin' && (
-                    <li><Link to="/admin" className={isActive('/admin')} onClick={() => setShowMobileMenu(false)}>Админ-панель</Link></li>
-                  )}
+                  {user?.role === 'admin' && <li><Link to="/admin" className={isActive('/admin')} onClick={() => setShowMobileMenu(false)}>Админ-панель</Link></li>}
                 </>
               )}
             </ul>
           </nav>
-
           <div className="auth-links">
-            <button onClick={() => dispatch(toggleTheme())} className="theme-toggle" title="Сменить тему">
-              {dark ? '☀️' : '🌙'}
-            </button>
-
+            <button onClick={() => dispatch(toggleTheme())} className="theme-toggle" title="Сменить тему">{dark ? '☀️' : '🌙'}</button>
             {isAuthenticated ? (
               <>
                 <div className="notifications-wrapper" ref={notifRef}>
                   <button className="notif-bell" onClick={() => setShowNotifications(!showNotifications)}>
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                      <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
-                    </svg>
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
                     {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
                   </button>
-
                   {showNotifications && (
                     <div className="notif-dropdown">
                       <div className="notif-header">
                         <span>Уведомления</span>
                         <div className="notif-header-actions">
-                          {unreadCount > 0 && (
-                            <button onClick={() => dispatch(markAllAsRead())} className="notif-read-all">Прочитать все</button>
-                          )}
-                          {notifications.length > 0 && (
-                            <button onClick={handleClearAll} className="notif-clear-all">Очистить</button>
-                          )}
+                          {unreadCount > 0 && <button onClick={() => { notificationsApi.markAllRead(); dispatch(markAllAsRead()); }} className="notif-read-all">Прочитать все</button>}
+                          {notifications.length > 0 && <button onClick={handleClearAll} className="notif-clear-all">Очистить</button>}
                         </div>
                       </div>
                       <div className="notif-list">
-                        {notifications.length === 0 ? (
-                          <div className="notif-empty">Нет уведомлений</div>
-                        ) : (
-                          notifications.map(n => (
-                            <div
-                              key={n.id}
-                              className={`notif-item ${!n.isRead ? 'notif-unread' : ''}`}
-                              onClick={() => handleNotificationClick(n)}
-                            >
-                              <div className="notif-title">{n.title}</div>
-                              <div className="notif-text">{n.text}</div>
-                              <div className="notif-time">{formatNotifTime(n.createdAt)}</div>
-                            </div>
-                          ))
-                        )}
+                        {notifications.length === 0 ? <div className="notif-empty">Нет уведомлений</div> : notifications.map(n => (
+                          <div key={n.id} className={`notif-item ${!n.isRead ? 'notif-unread' : ''}`} onClick={() => handleNotificationClick(n)}>
+                            <div className="notif-title">{n.title}</div><div className="notif-text">{n.text}</div><div className="notif-time">{formatNotifTime(n.createdAt)}</div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
                 </div>
-
                 <Link to="/profile" className="auth-link desktop-only">{user?.login || 'Профиль'}</Link>
                 <button onClick={handleLogout} className="auth-link logout-btn">Выход</button>
               </>
             ) : (
-              <>
-                <Link to="/login" className="auth-link">Вход</Link>
-                <Link to="/register" className="auth-link">Регистрация</Link>
-              </>
+              <><Link to="/login" className="auth-link">Вход</Link><Link to="/register" className="auth-link">Регистрация</Link></>
             )}
           </div>
         </div>

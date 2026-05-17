@@ -1,16 +1,31 @@
-import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchCategories } from '../../store/slices/categoriesSlice';
-import './MainPage.css';
+import { useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchStart,
+  fetchSuccess,
+  fetchFailure,
+} from "../../store/slices/categoriesSlice";
+import { categoriesApi } from "../../api/categoriesApi";
+import "./MainPage.css";
 
 const MainPage = () => {
   const dispatch = useDispatch();
-  const { items: categories, loading, error } = useSelector(state => state.categories);
-  const { isAuthenticated } = useSelector(state => state.auth);
+  const {
+    items: categories,
+    loading,
+    error,
+  } = useSelector((state) => state.categories);
+  const { isAuthenticated } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    dispatch(fetchCategories());
+    dispatch(fetchStart());
+    categoriesApi
+      .getAll()
+      .then((res) => dispatch(fetchSuccess(res.data)))
+      .catch((err) =>
+        dispatch(fetchFailure(err.response?.data?.message || "Ошибка")),
+      );
   }, [dispatch]);
 
   return (
@@ -18,9 +33,12 @@ const MainPage = () => {
       <div className="container">
         {!isAuthenticated && (
           <section className="hero-section">
-            <h1 className="hero-title">Добро пожаловать на Фриланс Платформу</h1>
+            <h1 className="hero-title">
+              Добро пожаловать на Фриланс Платформу
+            </h1>
             <p className="hero-subtitle">
-              Найдите идеального исполнителя для вашего проекта или начните зарабатывать на своих навыках
+              Найдите идеального исполнителя для вашего проекта или начните
+              зарабатывать на своих навыках
             </p>
             <div className="hero-actions">
               <Link to="/register" className="btn btn-primary btn-lg">
@@ -32,55 +50,42 @@ const MainPage = () => {
             </div>
           </section>
         )}
-
         <section className="categories-section">
           <h2 className="section-title">Категории услуг</h2>
-          
           {loading && (
             <div className="loading-container">
               <div className="spinner"></div>
               <p>Загрузка категорий...</p>
             </div>
           )}
-          
-          {error && (
-            <div className="error-message">
-              {error}
-            </div>
-          )}
-          
-          {!loading && !error && (
-            <>
-              {categories.length === 0 ? (
-                <div className="empty-state">
-                  <p>Категории пока не добавлены</p>
-                </div>
-              ) : (
-                <div className="categories-grid">
-                  {categories.map(category => (
-                    <Link 
-                      to={`/categories/${category.id}`} 
-                      key={category.id}
-                      className="category-card"
-                    >
-                      <div className="category-icon">
-                        {category.icon || '📁'}
-                      </div>
-                      <h3 className="category-name">{category.name}</h3>
-                      {category.description && (
-                        <p className="category-description">{category.description}</p>
-                      )}
-                      <span className="category-link">
-                        Смотреть фрилансеров →
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
+          {error && <div className="error-message">{error}</div>}
+          {!loading &&
+            !error &&
+            (categories.length === 0 ? (
+              <div className="empty-state">
+                <p>Категории пока не добавлены</p>
+              </div>
+            ) : (
+              <div className="categories-grid">
+                {categories.map((cat) => (
+                  <Link
+                    to={`/categories/${cat.id}`}
+                    key={cat.id}
+                    className="category-card"
+                  >
+                    <div className="category-icon">{cat.icon || "📁"}</div>
+                    <h3 className="category-name">{cat.name}</h3>
+                    {cat.description && (
+                      <p className="category-description">{cat.description}</p>
+                    )}
+                    <span className="category-link">
+                      Смотреть фрилансеров →
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            ))}
         </section>
-
         {!isAuthenticated && (
           <section className="how-it-works">
             <h2 className="section-title">Как это работает</h2>
